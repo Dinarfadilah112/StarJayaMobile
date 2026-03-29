@@ -1,62 +1,82 @@
-import React, { createContext, useContext, useState } from 'react';
-import { useColorScheme } from 'react-native';
+import React, { createContext, useContext } from 'react';
 
-// Definisi Warna
-export const Colors = {
-    light: {
-        background: '#F0F9FF', // Light Blue background
-        card: 'rgba(255, 255, 255, 0.7)',
-        cardBorder: 'rgba(255, 255, 255, 0.9)',
-        text: '#0F172A',
-        textSecondary: '#64748B',
-        primary: '#0EA5E9', // Sky Blue 500
-        accent: '#3B82F6',
-        success: '#10B981',
-        danger: '#EF4444',
-        pill: 'rgba(255, 255, 255, 0.5)',
-        pillActive: '#0EA5E9',
-        blob1: '#BAE6FD', // Sky 200
-        blob2: '#C7D2FE', // Indigo 200
-    },
-    dark: {
-        background: '#0F172A', // Slate 900
-        card: 'rgba(30, 41, 59, 0.7)', // Slate 800
-        cardBorder: 'rgba(51, 65, 85, 0.8)',
-        text: '#F1F5F9',
-        textSecondary: '#94A3B8',
-        primary: '#38BDF8', // Sky 400
-        accent: '#60A5FA',
-        success: '#34D399',
-        danger: '#F87171',
-        pill: 'rgba(30, 41, 59, 0.6)',
-        pillActive: '#38BDF8',
-        blob1: '#0C4A6E', // Sky 900
-        blob2: '#1E3A8A', // Blue 900
-    }
+type ThemeContextType = {
+    colors: {
+        // by U Purple Theme
+        primary: string;
+        primaryDark: string;
+        primaryLight: string;
+
+        // Accents
+        accent1: string; // Pink
+        accent2: string; // Blue
+        accent3: string; // Cyan
+
+        // Status
+        success: string;
+        warning: string;
+        danger: string;
+        info: string;
+
+        // Backgrounds
+        background: string;
+        card: string;
+        pill: string;
+        pillActive: string;
+
+        // Decorative
+        blob1: string;
+        blob2: string;
+
+        // Text
+        text: string;
+        textSecondary: string;
+
+        // Borders
+        cardBorder: string;
+    };
 };
-
-type Theme = 'light' | 'dark';
-
-interface ThemeContextType {
-    theme: Theme;
-    colors: typeof Colors.light;
-    toggleTheme: () => void;
-}
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-    const systemScheme = useColorScheme();
-    const [theme, setTheme] = useState<Theme>(systemScheme === 'dark' ? 'dark' : 'light');
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    // Tema "The Growth & Profit" (Emerald Green & Slate Charcoal)
+    const colors = {
+        primary: '#10B981', // Emerald Green 500
+        primaryDark: '#065F46', // Emerald 800
+        primaryLight: '#D1FAE5', // Emerald 100 (Soft)
 
-    const toggleTheme = () => {
-        setTheme(prev => prev === 'light' ? 'dark' : 'light');
+        // Accent Colors
+        accent1: '#F43F5E', // Rose (Untuk danger/hot)
+        accent2: '#0EA5E9', // Sky Blue (Untuk info/active)
+        accent3: '#F59E0B', // Amber (Untuk pending)
+
+        // Status Colors
+        success: '#10B981',
+        warning: '#F59E0B', 
+        danger: '#F43F5E', 
+        info: '#0EA5E9',
+
+        // Backgrounds
+        background: '#F8FAFC', // Slate 50 (Clean)
+        card: '#FFFFFF', 
+        pill: '#F1F5F9', // Slate 100
+        pillActive: '#10B981',
+
+        // Decorative Blobs
+        blob1: 'rgba(16, 185, 129, 0.06)', // Soft Emerald
+        blob2: 'rgba(6, 95, 70, 0.04)', // Deeper Emerald
+
+        // Text
+        text: '#0F172A', // Slate 900 (High Contrast)
+        textSecondary: '#64748B', // Slate 500
+
+        // Borders
+        cardBorder: '#E2E8F0', // Slate 200
     };
 
-    const colors = Colors[theme];
-
     return (
-        <ThemeContext.Provider value={{ theme, colors, toggleTheme }}>
+        <ThemeContext.Provider value={{ colors }}>
             {children}
         </ThemeContext.Provider>
     );
@@ -64,6 +84,8 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useTheme = () => {
     const context = useContext(ThemeContext);
-    if (!context) throw new Error('useTheme must be used within a ThemeProvider');
+    if (!context) {
+        throw new Error('useTheme must be used within ThemeProvider');
+    }
     return context;
 };

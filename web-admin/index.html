@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Jaya Bengkel - Web Login</title>
+    <!-- Supabase JS v2 -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+    <!-- QRCode.js -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
+
+        :root {
+            --primary: #0EA5E9;
+            --primary-dark: #0284C7;
+            --secondary: #64748B;
+            --bg: #F8FAFC;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            color: #1E293B;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            margin: auto;
+            position: relative;
+            background: #fff;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+            border-radius: 30px;
+            overflow: hidden;
+            height: 80vh;
+            max-height: 800px;
+        }
+
+        /* Left Side: Instructions */
+        .left-panel {
+            flex: 1;
+            padding: 80px 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, #0EA5E9 0%, #2563EB 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        .steps-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+
+        .steps-list li {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            color: #334155;
+        }
+
+        .step-num {
+            width: 32px;
+            height: 32px;
+            background: #E0F2FE;
+            color: #0284C7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        /* Right Side: QR Code */
+        .right-panel {
+            flex: 0.8;
+            background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .qr-card {
+            background: #fff;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            text-align: center;
+        }
+
+        #qr-container {
+            width: 256px;
+            height: 256px;
+            margin: 0 auto;
+        }
+
+        .qr-status {
+            margin-top: 20px;
+            font-weight: 600;
+            color: var(--secondary);
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Success State */
+        .success-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .success-overlay.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .success-icon {
+            font-size: 5rem;
+            color: #22C55E;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="left-panel">
+            <h1>Star Jaya Bengkel <br> Web Portal</h1>
+            <ul class="steps-list">
+                <li><span class="step-num">1</span> Buka aplikasi Star Jaya di HP Anda</li>
+                <li><span class="step-num">2</span> Buka Menu > Pilih "Tautkan Perangkat"</li>
+                <li><span class="step-num">3</span> Arahkan kamera ke kode QR ini</li>
+                <li><span class="step-num">4</span> Anda akan otomatis login di sini</li>
+            </ul>
+        </div>
+        <div class="right-panel">
+            <div class="qr-card">
+                <div id="qr-container"></div>
+                <p class="qr-status" id="status-text">Menghubungkan ke Server...</p>
+            </div>
+
+            <div class="success-overlay" id="success-overlay">
+                <div class="success-icon">✅</div>
+                <h2>Login Berhasil!</h2>
+                <p>Mengalihkan Anda ke Dashboard...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUPABASE CONFIG & LOGIC -->
+    <script>
+        // Check if libraries loaded
+        function checkLibraries() {
+            if (!window.supabase) {
+                document.getElementById('status-text').innerHTML =
+                    '<strong style="color: #EF4444;">Error:</strong> Supabase library gagal dimuat.<br><small>Cek koneksi internet Anda</small>';
+                return false;
+            }
+            if (typeof QRCode === 'undefined') {
+                document.getElementById('status-text').innerHTML =
+                    '<strong style="color: #EF4444;">Error:</strong> QRCode library gagal dimuat.<br><small>Cek koneksi internet Anda</small>';
+                return false;
+            }
+            return true;
+        }
+
+        // REPLACE WITH YOUR ACTUAL KEYS FROM .env
+        const SUPABASE_URL = 'https://skwsrojddzpinxczjowi.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNrd3Nyb2pkZHpwaW54Y3pqb3dpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1MjEzMjcsImV4cCI6MjA4MzA5NzMyN30.wFNrGWZodn0qkO4N2REsRKjvhkKfaH0F41UQHpT0EvQ';
+
+        let supabase = null;
+        let sessionUuid = crypto.randomUUID();
+        let qrCodeObj = null;
+
+        // Initialize Supabase (with check)
+        function initSupabase() {
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('✅ Supabase initialized');
+                return true;
+            } catch (err) {
+                console.error('❌ Supabase init failed:', err);
+                document.getElementById('status-text').innerHTML =
+                    `<strong style="color: #EF4444;">Error Init:</strong> ${err.message}`;
+                return false;
+            }
+        }
+
+        // 1. Generate QR
+        function generateQR(data) {
+            try {
+                const container = document.getElementById('qr-container');
+                container.innerHTML = '';
+                qrCodeObj = new QRCode(container, {
+                    text: data,
+                    width: 256,
+                    height: 256,
+                    colorDark: "#111827",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                document.getElementById('status-text').innerText = "Scan QR Code untuk Masuk";
+                console.log('✅ QR Code generated');
+            } catch (err) {
+                console.error('❌ QR generation failed:', err);
+                document.getElementById('status-text').innerHTML =
+                    `<strong style="color: #EF4444;">QR Error:</strong> ${err.message}`;
+            }
+        }
+
+        // 2. Register Session to DB
+        async function registerSession() {
+            try {
+                console.log("🔄 Registering session...", sessionUuid);
+                document.getElementById('status-text').innerText = "Membuat Sesi...";
+
+                // Insert new session
+                const { data, error } = await supabase
+                    .from('auth_sessions')
+                    .insert({
+                        session_id: sessionUuid,
+                        status: 'pending',
+                        created_at: new Date().toISOString()
+                    })
+                    .select();
+
+                if (error) {
+                    console.error("❌ Error creating session:", error);
+                    document.getElementById('status-text').innerHTML =
+                        `<strong style="color: #EF4444;">Gagal:</strong> ${error.message}<br><small>Cek Console (F12) untuk detail</small>`;
+                    return;
+                }
+
+                console.log("✅ Session created successfully:", data);
+                generateQR(sessionUuid);
+                listenForChanges();
+            } catch (err) {
+                console.error("❌ Unexpected error:", err);
+                document.getElementById('status-text').innerHTML =
+                    `<strong style="color: #EF4444;">Error:</strong> ${err.message}`;
+            }
+        }
+
+        // 3. Listen for changes (Realtime)
+        function listenForChanges() {
+            console.log("📡 Setting up Realtime listener for session:", sessionUuid);
+
+            const channel = supabase
+                .channel('auth-session-' + sessionUuid)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'auth_sessions',
+                        filter: `session_id=eq.${sessionUuid}`
+                    },
+                    (payload) => {
+                        console.log("🔔 Change detected!", payload);
+                        if (payload.new && payload.new.status === 'authenticated') {
+                            console.log("✅ Authentication successful!");
+                            handleLoginSuccess(payload.new);
+                        }
+                    }
+                )
+                .subscribe((status) => {
+                    console.log("📡 Subscription status:", status);
+                    if (status === 'SUBSCRIBED') {
+                        console.log("✅ Realtime connected!");
+                    } else if (status === 'CHANNEL_ERROR') {
+                        console.error("❌ Realtime connection failed!");
+                        document.getElementById('status-text').innerHTML =
+                            '<strong style="color: #EF4444;">Error:</strong> Realtime gagal terhubung<br><small>Refresh halaman</small>';
+                    }
+                });
+
+            console.log("📡 Channel created:", channel);
+        }
+
+        function handleLoginSuccess(sessionData) {
+            document.getElementById('success-overlay').classList.add('visible');
+            localStorage.setItem('user_session', JSON.stringify({
+                userId: sessionData.user_id,
+                token: 'mock-token-for-demo'
+            }));
+
+            console.log("LOGIN SUCCESS! User ID:", sessionData.user_id);
+
+            // Redirect to dashboard (mock)
+            setTimeout(() => {
+                // alert(`Welcome User ID: ${sessionData.user_id}! (Dashboard Web akan dibuat nanti)`);
+                window.location.href = 'dashboard.html';
+            }, 1000);
+        }
+
+
+        // Start - Initialize everything
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Starting Web Portal...');
+
+            // Check if libraries are loaded
+            if (!checkLibraries()) {
+                console.error('❌ Libraries not loaded');
+                return;
+            }
+
+            // Initialize Supabase
+            if (!initSupabase()) {
+                console.error('❌ Supabase init failed');
+                return;
+            }
+
+            // Start the session registration process
+            registerSession();
+        });
+
+
+    </script>
+</body>
+
+</html>

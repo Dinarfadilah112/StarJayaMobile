@@ -1,50 +1,26 @@
-# Welcome to your Expo app 👋
+# mOTO - Mobile Otomotif 🚗💨
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**mOTO** adalah aplikasi manajemen bengkel modern yang dirancang khusus untuk membantu para pelaku usaha bengkel (UMKM maupun Profesional) dalam mengelola operasional harian mereka secara efisien dari perangkat mobile.
 
-## Get started
+## 🚀 Misi Kami
+Membantu digitalisasi ekosistem bengkel di Indonesia dengan menyediakan alat manajemen yang intuitif, aman, dan powerful.
 
-1. Install dependencies
+## ✨ Fitur Utama
+- **Kasir Cepat**: Sistem POS (Point of Sale) yang dioptimalkan untuk transaksi sparepart dan jasa service.
+- **Manajemen Laporan**: Export laporan penjualan harian, mingguan, hingga bulanan ke format PDF dan Excel.
+- **Analisis Penjualan**: Identifikasi produk terlaris, barang yang jarang keluar, serta peringatan stok menipis secara real-time.
+- **Keamanan Berlapis**: Proteksi aplikasi dengan PIN 6-digit dan autentikasi biometrik (FaceID/Fingerprint).
+- **Multi-User**: Dukungan untuk akun Owner, Kasir, dan Mekanik.
 
-   ```bash
-   npm install
-   ```
+## 🛠 Teknologi
+- **Frontend**: React Native with Expo Router
+- **Database**: SQLite (Offline First) & Supabase (Cloud Sync)
+- **UI/UX**: Modern Glassmorphism & Royal Blue Aesthetics
 
-2. Start the app
+## 📦 Instalasi
+1. Clone repository
+2. Jalankan `npm install`
+3. Jalankan `npx expo start`
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+*Built for the next generation of Indonesian workshops.*
