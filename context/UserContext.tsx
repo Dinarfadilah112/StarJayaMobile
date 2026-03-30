@@ -23,6 +23,7 @@ interface UserContextType {
     updateUserProfile: (id: number, data: { name?: string, pin?: string, role?: string, avatar?: string, email?: string, phone?: string, address?: string, status?: string }) => void;
     removeUser: (id: number) => void;
     isLoading: boolean;
+    isOwner: boolean;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -162,7 +163,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         <UserContext.Provider value={{
             user, login, logout, isLocked, setLocked: setIsLocked,
             usersList, refreshUsers, addNewUser, updateUserProfile, removeUser,
-            isLoading
+            isLoading,
+            isOwner: user?.role === 'Owner' || user?.role === 'Super_Admin'
         }}>
             {children}
         </UserContext.Provider>

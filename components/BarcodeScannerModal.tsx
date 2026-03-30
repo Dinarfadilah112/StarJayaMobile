@@ -70,8 +70,8 @@ export default function BarcodeScannerModal({ isVisible, onClose, onScanned }: B
                             barcodeTypes: ["qr", "ean13", "ean8", "code128", "code39", "upc_a", "upc_e"],
                         }}
                     >
-                        {/* Scanner Overlay */}
-                        <View style={styles.overlay}>
+                        {/* Scanner Overlay Backgrounds */}
+                        <View style={StyleSheet.absoluteFillObject}>
                             <View style={styles.unfocusedContainer}></View>
                             <View style={styles.middleContainer}>
                                 <View style={styles.unfocusedContainer}></View>
@@ -82,12 +82,11 @@ export default function BarcodeScannerModal({ isVisible, onClose, onScanned }: B
                                     <View style={[styles.corner, styles.bottomLeft]} />
                                     <View style={[styles.corner, styles.bottomRight]} />
                                     
-                                    {/* Scanning Line Animation Placeholder */}
                                     <View style={styles.scanLine} />
                                 </View>
                                 <View style={styles.unfocusedContainer}></View>
                             </View>
-                            <View style={styles.unfocusedContainer}>
+                            <View style={styles.bottomUnfocusedContainer}>
                                 <Text style={styles.instructionText}>Arahkan kamera ke barcode produk</Text>
                             </View>
                         </View>
@@ -96,7 +95,7 @@ export default function BarcodeScannerModal({ isVisible, onClose, onScanned }: B
                         <SafeAreaTop>
                             <View style={styles.topBar}>
                                 <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                                    <Ionicons name="close" size={28} color="#fff" />
+                                    <Ionicons name="close" size={24} color="#FFF" />
                                 </TouchableOpacity>
                                 <Text style={styles.topBarTitle}>Scan Barcode</Text>
                                 <View style={{ width: 44 }} /> 
@@ -117,7 +116,7 @@ export default function BarcodeScannerModal({ isVisible, onClose, onScanned }: B
 }
 
 const SafeAreaTop = ({ children }: { children: React.ReactNode }) => (
-    <View style={{ paddingTop: Platform.OS === 'ios' ? 50 : 20 }}>
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, paddingTop: Platform.OS === 'ios' ? 50 : 40 }}>
         {children}
     </View>
 );
@@ -158,9 +157,15 @@ const styles = StyleSheet.create({
     },
     unfocusedContainer: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.6)',
+        backgroundColor: 'rgba(0,0,0,0.65)',
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    bottomUnfocusedContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.65)',
+        alignItems: 'center',
+        paddingTop: 40,
     },
     middleContainer: {
         flexDirection: 'row',
@@ -175,10 +180,11 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 14,
         fontWeight: '600',
-        backgroundColor: 'rgba(0,0,0,0.4)',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 24,
+        overflow: 'hidden',
     },
     topBar: {
         flexDirection: 'row',
@@ -189,14 +195,14 @@ const styles = StyleSheet.create({
     },
     topBarTitle: {
         color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
+        fontSize: 16,
+        fontWeight: '700',
     },
     closeButton: {
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.4)',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -205,35 +211,35 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderColor: '#0ea5e9',
-        borderWidth: 5,
+        borderWidth: 4,
     },
     topLeft: {
         top: 0,
         left: 0,
         borderRightWidth: 0,
         borderBottomWidth: 0,
-        borderTopLeftRadius: 10,
+        borderTopLeftRadius: 20,
     },
     topRight: {
         top: 0,
         right: 0,
         borderLeftWidth: 0,
         borderBottomWidth: 0,
-        borderTopRightRadius: 10,
+        borderTopRightRadius: 20,
     },
     bottomLeft: {
         bottom: 0,
         left: 0,
         borderRightWidth: 0,
         borderTopWidth: 0,
-        borderBottomLeftRadius: 10,
+        borderBottomLeftRadius: 20,
     },
     bottomRight: {
         bottom: 0,
         right: 0,
         borderLeftWidth: 0,
         borderTopWidth: 0,
-        borderBottomRightRadius: 10,
+        borderBottomRightRadius: 20,
     },
     scanLine: {
         position: 'absolute',

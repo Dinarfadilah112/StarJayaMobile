@@ -16,7 +16,8 @@ import {
     View, 
     Modal,
     KeyboardAvoidingView,
-    Platform
+    Platform,
+    Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -39,7 +40,6 @@ const CATEGORIES = [
 export default function SetupScreen() {
     const { colors } = useTheme();
     const { addNewUser, login } = useUser();
-    const { expoPushToken } = useNotifications();
     const router = useRouter();
 
     const [name, setName] = useState('');
@@ -69,7 +69,7 @@ export default function SetupScreen() {
         setIsLoading(true);
         try {
             // 1. Create the primary 'Owner' account
-            await addNewUser(name, pin, 'Owner', { status: 'Aktif', push_token: expoPushToken });
+            await addNewUser(name, pin, 'Owner', { status: 'Aktif' });
             
             // 2. Set business profile
             await updateShopSettings({
@@ -80,7 +80,7 @@ export default function SetupScreen() {
             // 3. Login automatically
             const success = await login(pin);
             if (success) {
-                router.replace('/(drawer)');
+                router.replace('/(drawer)/(tabs)');
             } else {
                 router.replace('/(auth)/login');
             }
@@ -101,69 +101,81 @@ export default function SetupScreen() {
             >
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     <View style={styles.header}>
-                        <View style={[styles.iconBox, { backgroundColor: colors.primary + '15' }]}>
-                            <Ionicons name="person-add-outline" size={32} color={colors.primary} />
-                        </View>
+                        <Image 
+                            source={require('@/assets/images/logo.png')} 
+                            style={{ width: 150, height: 45, marginBottom: 20 }}
+                            resizeMode="contain"
+                        />
                         <Text style={[styles.title, { color: colors.text }]}>Buat Akun Bisnis</Text>
                         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                            Lengkapi data di bawah untuk mulai mengelola bisnis Anda dengan mOTO.
+                            Lengkapi data di bawah ini untuk mengaktifkan sistem kasir offline mOTO di perangkat Anda.
                         </Text>
                     </View>
 
                     <View style={styles.form}>
-                        {/* Nama User */}
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: colors.textSecondary }]}>Nama Lengkap</Text>
-                            <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-                                <Ionicons name="person-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
-                                <TextInput 
-                                    style={[styles.input, { color: colors.text }]}
-                                    placeholder="Contoh: Budi Santoso"
-                                    placeholderTextColor={colors.textSecondary + '70'}
-                                    value={name}
-                                    onChangeText={setName}
-                                />
+                        {/* KARTU 1: INFO PERSONAL & USAHA */}
+                        <View style={[styles.cardBox, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+                            <View style={styles.cardHeader}>
+                                <Ionicons name="business" size={18} color={colors.primary} />
+                                <Text style={[styles.cardTitle, { color: colors.text }]}>Profil Usaha</Text>
                             </View>
-                        </View>
 
-                        {/* Nama Usaha */}
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: colors.textSecondary }]}>Nama Usaha / Toko</Text>
-                            <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-                                <Ionicons name="business-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
-                                <TextInput 
-                                    style={[styles.input, { color: colors.text }]}
-                                    placeholder="Contoh: Bengkel Jaya Abadi"
-                                    placeholderTextColor={colors.textSecondary + '70'}
-                                    value={businessName}
-                                    onChangeText={setBusinessName}
-                                />
-                            </View>
-                        </View>
-
-                        {/* Jenis Usaha (Dropdown Trigger) */}
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: colors.textSecondary }]}>Jenis Usaha</Text>
-                            <TouchableOpacity 
-                                style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
-                                onPress={() => setIsPickerVisible(true)}
-                            >
-                                <Ionicons name="list-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
-                                <Text style={[styles.input, { color: businessType ? colors.text : colors.textSecondary + '70', paddingTop: 14 }]}>
-                                    {businessType ? CATEGORIES.find(c => c.id === businessType)?.name : 'Pilih Jenis Usaha'}
-                                </Text>
-                                <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* PIN Setup */}
-                        <View style={styles.pinSection}>
                             <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: colors.textSecondary }]}>Buat PIN Keamanan (6 Digit)</Text>
-                                <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-                                    <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+                                <Text style={[styles.label, { color: colors.textSecondary }]}>Nama Pemilik</Text>
+                                <View style={[styles.inputWrapper, { backgroundColor: colors.background }]}>
+                                    <Ionicons name="person-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
                                     <TextInput 
                                         style={[styles.input, { color: colors.text }]}
+                                        placeholder="Ketik nama Anda"
+                                        placeholderTextColor={colors.textSecondary + '70'}
+                                        value={name}
+                                        onChangeText={setName}
+                                    />
+                                </View>
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.label, { color: colors.textSecondary }]}>Nama Usaha</Text>
+                                <View style={[styles.inputWrapper, { backgroundColor: colors.background }]}>
+                                    <Ionicons name="storefront-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+                                    <TextInput 
+                                        style={[styles.input, { color: colors.text }]}
+                                        placeholder="Ketik nama usaha Anda"
+                                        placeholderTextColor={colors.textSecondary + '70'}
+                                        value={businessName}
+                                        onChangeText={setBusinessName}
+                                    />
+                                </View>
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.label, { color: colors.textSecondary }]}>Jenis Usaha</Text>
+                                <TouchableOpacity 
+                                    style={[styles.inputWrapper, { backgroundColor: colors.background }]}
+                                    onPress={() => setIsPickerVisible(true)}
+                                >
+                                    <Ionicons name="list-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+                                    <Text style={[styles.input, { color: businessType ? colors.text : colors.textSecondary + '70' }]}>
+                                        {businessType ? CATEGORIES.find(c => c.id === businessType)?.name : 'Pilih Jenis Usaha'}
+                                    </Text>
+                                    <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+
+                        {/* KARTU 2: KEAMANAN PIN */}
+                        <View style={[styles.cardBox, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+                            <View style={styles.cardHeader}>
+                                <Ionicons name="shield-checkmark" size={18} color={colors.primary} />
+                                <Text style={[styles.cardTitle, { color: colors.text }]}>Keamanan (PIN)</Text>
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.label, { color: colors.textSecondary }]}>Buat PIN (6 Digit Angka)</Text>
+                                <View style={[styles.inputWrapper, { backgroundColor: colors.background }]}>
+                                    <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+                                    <TextInput 
+                                        style={[styles.input, { color: colors.text, letterSpacing: 5 }]}
                                         placeholder="******"
                                         placeholderTextColor={colors.textSecondary + '70'}
                                         keyboardType="numeric"
@@ -177,10 +189,10 @@ export default function SetupScreen() {
 
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: colors.textSecondary }]}>Konfirmasi PIN</Text>
-                                <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+                                <View style={[styles.inputWrapper, { backgroundColor: colors.background }]}>
                                     <Ionicons name="key-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
                                     <TextInput 
-                                        style={[styles.input, { color: colors.text }]}
+                                        style={[styles.input, { color: colors.text, letterSpacing: 5 }]}
                                         placeholder="******"
                                         placeholderTextColor={colors.textSecondary + '70'}
                                         keyboardType="numeric"
@@ -208,7 +220,7 @@ export default function SetupScreen() {
             </KeyboardAvoidingView>
 
             {/* Business Type Picker Modal */}
-            <Modal visible={isPickerVisible} transparent animationType="slide">
+            <Modal visible={isPickerVisible} transparent animationType="fade">
                 <View style={styles.modalOverlay}>
                     <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
                         <View style={styles.modalHeader}>
@@ -217,7 +229,7 @@ export default function SetupScreen() {
                                 <Ionicons name="close" size={24} color={colors.text} />
                             </TouchableOpacity>
                         </View>
-                        <ScrollView style={styles.modalList}>
+                        <ScrollView style={styles.modalList} showsVerticalScrollIndicator={false}>
                             {CATEGORIES.map((item) => (
                                 <TouchableOpacity 
                                     key={item.id} 
@@ -280,6 +292,23 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: 22,
         paddingHorizontal: 10,
+    },
+    cardBox: {
+        borderWidth: 1,
+        borderRadius: 24,
+        padding: 20,
+        marginBottom: 20,
+        gap: 16,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 15,
+        gap: 8,
+    },
+    cardTitle: {
+        fontSize: 16,
+        fontWeight: '800',
     },
     form: {
         gap: 20,

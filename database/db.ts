@@ -99,6 +99,16 @@ export const initDatabase = () => {
         ];
         addTransCols.forEach(sql => { try { db.execSync(sql); } catch (e) {} });
 
+        // 4. DETAIL TRANSAKSI
+        db.execSync(`CREATE TABLE IF NOT EXISTS detail_transaksi (
+            id_transaksi TEXT,
+            kode_barang TEXT,
+            nama_barang TEXT,
+            jumlah INTEGER,
+            harga_satuan INTEGER,
+            subtotal INTEGER
+        );`);
+
         // 5. MECHANICS
         db.execSync(`CREATE TABLE IF NOT EXISTS mechanics (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL);`);
         const addMechCols = [
@@ -149,6 +159,16 @@ export const initDatabase = () => {
         try { db.execSync('ALTER TABLE pembelian ADD COLUMN total_harga INTEGER'); } catch (e) {}
         try { db.execSync('ALTER TABLE pembelian ADD COLUMN is_synced INTEGER DEFAULT 0'); } catch (e) {}
 
+        // 10. DETAIL PEMBELIAN
+        db.execSync(`CREATE TABLE IF NOT EXISTS detail_pembelian (
+            id_pembelian TEXT,
+            kode_barang TEXT,
+            nama_barang TEXT,
+            jumlah INTEGER,
+            harga_satuan INTEGER,
+            subtotal INTEGER
+        );`);
+
         console.log('✅ Database Schema verified and updated.');
         // clearDuplicateMechanics();
         // seedDatabase() - REMOVED to follow 'no dummy' requirement
@@ -159,21 +179,20 @@ export const initDatabase = () => {
 };
 
 export const clearAllData = () => {
-    try {
-        db.execSync('DELETE FROM detail_transaksi');
-        db.execSync('DELETE FROM transaksi');
-        db.execSync('DELETE FROM barang');
-        db.execSync('DELETE FROM mechanics');
-        db.execSync('DELETE FROM users');
-        db.execSync('DELETE FROM kategori');
-        db.execSync('DELETE FROM shop_settings');
-        db.execSync('DELETE FROM pengeluaran');
-        db.execSync('DELETE FROM pembelian');
-        db.execSync('DELETE FROM detail_pembelian');
-        console.log("🔥 FULL Database Wipe Successful.");
-    } catch (e) {
-        console.error("Full reset error:", e);
-    }
+    const tables = [
+        'detail_transaksi', 'transaksi', 'barang', 'mechanics',
+        'users', 'kategori', 'shop_settings', 'pengeluaran',
+        'pembelian', 'detail_pembelian'
+    ];
+    
+    tables.forEach(table => {
+        try {
+            db.execSync(`DELETE FROM ${table}`);
+        } catch (e) {
+            // Ignore if table doesn't exist yet
+        }
+    });
+    console.log("🔥 FULL Database Wipe Successful.");
 };
 
 const seedDatabase = () => {
@@ -544,4 +563,73 @@ export const getSalesSummary = async (startDate?: string, endDate?: string) => {
     }
 
     return await db.getFirstAsync(query, params);
+};
+
+// --- KEUANGAN & PEMBUKUAN (FINANCIALS) ---
+
+export const addPengeluaran = async (kategori: string, jumlah: number, keterangan: string) => {
+    return new Promise<void>((resolve, reject) => {
+        try {
+            db.runSync('INSERT INTO pengeluaran (kategori, jumlah, keterangan) VALUES (?, ?, ?)', [kategori, jumlah, keterangan]);
+            resolve();
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
+
+export const getPengeluaran = async (startDate?: string, endDate?: string) => {
+    if (startDate && endDate) {
+        return db.getAllSync('SELECT * FROM pengeluaran WHERE date(tanggal) BETWEEN date(?) AND date(?) ORDER BY tanggal DESC', [startDate, endDate]);
+    }
+    return db.getAllSync('SELECT * FROM pengeluaran ORDER BY tanggal DESC');
+};
+
+export const addPembelian = async (id_pembelian: string, supplier: string, total_harga: number, items: any[]) => {
+    return new Promise<void>((resolve, reject) => {
+        try {
+            db.withTransactionSync(() => {
+                db.runSync('INSERT INTO pembelian (id, supplier, total_harga) VALUES (?, ?, ?)', [id_pembelian, supplier, total_harga]);
+                
+                for (const item of items) {
+                    db.runSync('INSERT INTO detail_pembelian (id_pembelian, kode_barang, nama_barang, jumlah, harga_satuan, subtotal) VALUES (?, ?, ?, ?, ?, ?)', [
+                        id_pembelian, item.kode_barang, item.nama_barang, item.jumlah, item.harga_satuan, item.subtotal
+                    ]);
+                    
+                    // Auto update the stock based on the purchase
+                    db.runSync('UPDATE barang SET stok = stok + ?, harga_beli = ? WHERE kode_barang = ?', [
+                        item.jumlah, item.harga_satuan, item.kode_barang
+                    ]);
+                }
+            });
+            resolve();
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
+
+export const getPembelian = async (startDate?: string, endDate?: string) => {
+    if (startDate && endDate) {
+        return db.getAllSync('SELECT * FROM pembelian WHERE date(tanggal) BETWEEN date(?) AND date(?) ORDER BY tanggal DESC', [startDate, endDate]);
+    }
+    return db.getAllSync('SELECT * FROM pembelian ORDER BY tanggal DESC');
+};
+
+export const getKeuanganSummary = async (startDate: string, endDate: string) => {
+    const revenue = db.getFirstSync<{total: number}>("SELECT SUM(total_harga) as total FROM transaksi WHERE date(tanggal_transaksi) BETWEEN date(?) AND date(?)", [startDate, endDate]);
+    const expenses = db.getFirstSync<{total: number}>("SELECT SUM(jumlah) as total FROM pengeluaran WHERE date(tanggal) BETWEEN date(?) AND date(?)", [startDate, endDate]);
+    const purchases = db.getFirstSync<{total: number}>("SELECT SUM(total_harga) as total FROM pembelian WHERE date(tanggal) BETWEEN date(?) AND date(?)", [startDate, endDate]);
+
+    const totalRevenue = revenue?.total || 0;
+    const pengeluaranOperasional = expenses?.total || 0;
+    const pembelanjaanStok = purchases?.total || 0;
+    
+    return {
+        totalRevenue,
+        pengeluaranOperasional,
+        pembelanjaanStok,
+        totalKeluar: pengeluaranOperasional + pembelanjaanStok,
+        saldoBersih: totalRevenue - (pengeluaranOperasional + pembelanjaanStok)
+    };
 };

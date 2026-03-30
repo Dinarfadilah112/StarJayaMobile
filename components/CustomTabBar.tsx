@@ -16,7 +16,7 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
     if (state.routes.length === 0) return null;
 
     return (
-        <View style={[styles.container, { bottom: Math.max(insets.bottom, 20), backgroundColor: 'transparent' }]} pointerEvents="box-none">
+        <View style={[styles.container, { bottom: Math.max(insets.bottom, 12), backgroundColor: 'transparent' }]} pointerEvents="box-none">
             <View style={[styles.tabBar, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
                 {state.routes.map((route, index) => {
                     const { options } = descriptors[route.key];
@@ -85,7 +85,7 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
                             {/* Animated Content */}
                             <IconComponent
                                 name={iconName}
-                                size={24}
+                                size={22}
                                 color={isFocused ? '#FFFFFF' : colors.textSecondary}
                             />
                             {isFocused && (
@@ -107,7 +107,7 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
 const styles = StyleSheet.create({
     container: {
         position: 'absolute',
-        bottom: 30,
+        bottom: 30, // Fallback if inline style is missing
         left: 0,
         right: 0,
         alignItems: 'center',
@@ -119,8 +119,8 @@ const styles = StyleSheet.create({
     tabBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderRadius: 30, // Fully rounded pill container
-        padding: 6, // Slight padding increase for premium feel
+        borderRadius: 24, // Fully rounded pill container
+        padding: 4, // Slimmer padding
         elevation: 10, // Elevation on the VISIBLE view for Android shadow
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
@@ -132,16 +132,17 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 16,
-        borderRadius: 25, // Round individual items
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 20, // Round individual items
     },
     activeTabItem: {
         // Additional styles for active state if needed
     },
     label: {
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '600',
-        marginLeft: 8,
+        marginLeft: 6,
+
     },
 });

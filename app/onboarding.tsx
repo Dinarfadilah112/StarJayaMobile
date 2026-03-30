@@ -10,9 +10,10 @@ import {
     Text,
     TouchableOpacity,
     View,
-    SafeAreaView,
     Image,
+    Animated,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -28,27 +29,27 @@ const slides = [
         id: '2',
         title: 'Laporan Bisnis yang Informatif',
         description: 'Buat keputusan bisnis yang lebih baik dengan laporan kinerja bisnis Anda.',
-        icon: 'stats-chart-outline',
+        icon: 'document-text-outline',
         color: '#3B82F6', // Blue
     },
     {
         id: '3',
-        title: 'Multi Bisnis & Staf',
-        description: 'Buat dan kelola banyak bisnis, juga keuangan pribadi Anda.',
+        title: 'Manajemen Staf & Mekanik',
+        description: 'Tambahkan akun kasir dan mekanik. Pantau kinerja transaksi masing-masing pegawai dengan mudah.',
         icon: 'people-outline',
         color: '#F59E0B', // Amber
     },
     {
         id: '4',
-        title: 'Gunakan Secara Offline & Online',
-        description: 'Jalankan bisnis Anda kapan saja tanpa hambatan, bahkan tanpa koneksi internet.',
+        title: 'Akses Offline Penuh',
+        description: 'Kelola semua fitur bisnis Anda kapan saja, bahkan di lokasi tanpa sinyal internet sama sekali.',
         icon: 'cloud-offline-outline',
         color: '#8B5CF6', // Purple
     },
     {
         id: '5',
-        title: 'Aman & Terpercaya',
-        description: 'Data Anda disimpan dengan aman dan dicadangkan, sehingga dapat dipulihkan kapan saja.',
+        title: 'Data Lokal yang Aman',
+        description: 'Seluruh data transaksi dan inventaris tersimpan aman di dalam memori ponsel Anda.',
         icon: 'shield-checkmark-outline',
         color: '#10B981',
     },
@@ -58,7 +59,8 @@ export default function OnboardingScreen() {
     const { colors } = useTheme();
     const router = useRouter();
     const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-    const flatListRef = useRef<FlatList>(null);
+    const flatListRef = useRef<any>(null);
+    const scrollX = useRef(new Animated.Value(0)).current;
 
     const updateCurrentSlideIndex = (e: any) => {
         const contentOffsetX = e.nativeEvent.contentOffset.x;
@@ -90,18 +92,28 @@ export default function OnboardingScreen() {
             <View style={styles.footer}>
                 {/* Pagination Dots */}
                 <View style={styles.indicatorContainer}>
-                    {slides.map((_, index) => (
-                        <View
-                            key={index}
-                            style={[
-                                styles.indicator,
-                                currentSlideIndex === index && {
-                                    backgroundColor: colors.primary,
-                                    width: 25,
-                                },
-                            ]}
-                        />
-                    ))}
+                    {slides.map((_, index) => {
+                        const dotWidth = scrollX.interpolate({
+                            inputRange: [(index - 1) * width, index * width, (index + 1) * width],
+                            outputRange: [6, 25, 6],
+                            extrapolate: 'clamp',
+                        });
+                        const dotColor = scrollX.interpolate({
+                            inputRange: [(index - 1) * width, index * width, (index + 1) * width],
+                            outputRange: ['#E2E8F0', colors.primary, '#E2E8F0'],
+                            extrapolate: 'clamp',
+                        });
+
+                        return (
+                            <Animated.View
+                                key={index}
+                                style={[
+                                    styles.indicator,
+                                    { width: dotWidth, backgroundColor: dotColor }
+                                ]}
+                            />
+                        );
+                    })}
                 </View>
 
                 {/* Buttons */}
@@ -133,34 +145,34 @@ export default function OnboardingScreen() {
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
             {/* Header / Logo */}
             <View style={styles.header}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={[styles.logoBox, { backgroundColor: colors.primary }]}>
-                        <Ionicons name="flash" size={20} color="#FFF" />
-                    </View>
-                    <Text style={[styles.brand, { color: colors.text }]}>mOTO</Text>
-                </View>
-                <TouchableOpacity style={styles.langBtn}>
-                    <Text style={{ fontSize: 13, color: colors.textSecondary }}>Indonesian</Text>
-                    <Ionicons name="chevron-down" size={14} color={colors.textSecondary} style={{ marginLeft: 4 }} />
-                </TouchableOpacity>
+                <Image 
+                    source={require('@/assets/images/logo.png')} 
+                    style={{ width: 220, height: 60, marginLeft: -45 }}
+                    resizeMode="contain"
+                />
             </View>
 
-            <FlatList
+            <Animated.FlatList
                 ref={flatListRef}
                 onMomentumScrollEnd={updateCurrentSlideIndex}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                    { useNativeDriver: false }
+                )}
+                scrollEventThrottle={16}
                 data={slides}
-                contentContainerStyle={{ height: height * 0.7 }}
+                contentContainerStyle={{ flexGrow: 1 }}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 pagingEnabled
-                renderItem={({ item }) => (
+                renderItem={({ item }: { item: any }) => (
                     <View style={styles.slide}>
                         <View style={styles.imageContainer}>
                             <View style={[styles.iconCircle, { backgroundColor: item.color + '15' }]}>
-                                <Ionicons name={item.icon as any} size={120} color={item.color} />
+                                <Ionicons name={item.icon as any} size={100} color={item.color} />
                             </View>
                         </View>
-                        <View style={{ paddingHorizontal: 40, alignItems: 'center' }}>
+                        <View style={{ paddingHorizontal: 35, alignItems: 'center', flex: 1, paddingTop: 20 }}>
                             <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
                             <Text style={[styles.description, { color: colors.textSecondary }]}>{item.description}</Text>
                         </View>
@@ -178,16 +190,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 25,
-        paddingVertical: 20,
-    },
-    logoBox: {
-        width: 32,
-        height: 32,
-        borderRadius: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 8,
+        paddingLeft: 0,
+        paddingRight: 18,
+        paddingVertical: 10,
     },
     brand: {
         fontSize: 18,
@@ -201,57 +206,58 @@ const styles = StyleSheet.create({
     slide: {
         width,
         alignItems: 'center',
-        justifyContent: 'center',
     },
     imageContainer: {
-        height: height * 0.35,
+        height: height * 0.4,
         alignItems: 'center',
         justifyContent: 'center',
     },
     iconCircle: {
-        width: 220,
-        height: 220,
-        borderRadius: 110,
+        width: 180,
+        height: 180,
+        borderRadius: 90,
         justifyContent: 'center',
         alignItems: 'center',
     },
     title: {
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: '800',
         textAlign: 'center',
-        marginBottom: 10,
+        marginBottom: 12,
     },
     description: {
-        fontSize: 16,
+        fontSize: 15,
         textAlign: 'center',
         lineHeight: 24,
+        paddingHorizontal: 10,
     },
     footer: {
-        height: height * 0.25,
+        height: height * 0.22,
         justifyContent: 'space-between',
         paddingHorizontal: 25,
+        paddingBottom: 25,
     },
     indicatorContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: 20,
+        marginBottom: 10,
     },
     indicator: {
-        height: 8,
-        width: 8,
+        height: 6,
+        width: 6,
         backgroundColor: '#E2E8F0',
-        marginHorizontal: 4,
-        borderRadius: 4,
+        marginHorizontal: 3,
+        borderRadius: 3,
     },
     btn: {
-        height: 56,
-        borderRadius: 16,
+        height: 52,
+        borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
     },
     btnText: {
         fontWeight: '700',
-        fontSize: 16,
+        fontSize: 15,
         color: '#FFF',
     },
 });

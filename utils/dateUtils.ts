@@ -58,3 +58,11 @@ export const formatDateShort = (dateString: string): string => {
         day: 'numeric'
     });
 };
+
+export const getMonthName = (date = new Date()): string => {
+    const months = [
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", 
+        "Agustus", "September", "Oktober", "November", "Desember"
+    ];
+    return months[date.getMonth()];
+};

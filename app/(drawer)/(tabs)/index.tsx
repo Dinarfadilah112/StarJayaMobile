@@ -4,7 +4,8 @@ import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { useNotifications } from '@/context/NotificationContext';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { DrawerActions, useNavigation } from '@react-navigation/native';
+import { getMonthName } from '@/utils/dateUtils';
+import { useNavigation } from '@react-navigation/native';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -19,12 +20,12 @@ export default function DashboardScreen() {
     const { transactions = [], products = [], stats = { totalRevenue: 0, totalExpenses: 0, monthlyRevenue: 0, monthlyPurchases: 0, monthlyExpenses: 0 }, isSyncing = false } = useShop();
     const { colors } = useTheme();
     const { user } = useUser();
-    const { sendTestNotification } = useNotifications();
+
     const isOwner = user?.role === 'Owner';
     const [isCalcVisible, setIsCalcVisible] = useState(false);
     const [isScannerVisible, setIsScannerVisible] = useState(false);
 
-    const currentMonth = new Date().toLocaleString('id-ID', { month: 'long' });
+    const currentMonth = getMonthName();
     const lowStockCount = products.filter(p => p.stock <= 5 && p.category !== 'Service').length;
 
     const formatRupiah = (num: number) => 'Rp ' + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -94,51 +95,51 @@ export default function DashboardScreen() {
                 {/* Quick Actions row */}
                 <View style={[styles.actionsRow, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
                     <TouchableOpacity onPress={() => navigation.navigate('kasir' as never)} style={styles.actionIconWrapper}>
-                        <View style={[styles.actionIcon, { backgroundColor: colors.primary + '15' }]}><Ionicons name="cart-outline" size={22} color={colors.primary} /></View>
+                        <View style={[styles.actionIcon, { backgroundColor: colors.primary + '15' }]}><Ionicons name="cart-outline" size={18} color={colors.primary} /></View>
                         <Text style={styles.actionLabel}>Kasir</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => setIsScannerVisible(true)} style={styles.actionIconWrapper}>
-                        <View style={[styles.actionIcon, { backgroundColor: colors.info + '15' }]}><Ionicons name="scan-outline" size={22} color={colors.info} /></View>
+                        <View style={[styles.actionIcon, { backgroundColor: colors.info + '15' }]}><Ionicons name="scan-outline" size={18} color={colors.info} /></View>
                         <Text style={styles.actionLabel}>Scan</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => setIsCalcVisible(true)} style={styles.actionIconWrapper}>
-                        <View style={[styles.actionIcon, { backgroundColor: colors.warning + '15' }]}><Ionicons name="calculator-outline" size={22} color={colors.warning} /></View>
+                        <View style={[styles.actionIcon, { backgroundColor: colors.warning + '15' }]}><Ionicons name="calculator-outline" size={18} color={colors.warning} /></View>
                         <Text style={styles.actionLabel}>Hitung</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => navigation.navigate('gudang' as never)} style={styles.actionIconWrapper}>
-                        <View style={[styles.actionIcon, { backgroundColor: '#8B5CF615' }]}><Ionicons name="cube-outline" size={22} color="#8B5CF6" /></View>
+                        <View style={[styles.actionIcon, { backgroundColor: '#8B5CF615' }]}><Ionicons name="cube-outline" size={18} color="#8B5CF6" /></View>
                         <Text style={styles.actionLabel}>Stok</Text>
                     </TouchableOpacity>
                 </View>
 
-                {/* Live Notifications Demo */}
+                {/* Low Stock Alert */}
                 <TouchableOpacity 
-                    onPress={sendTestNotification}
+                    onPress={() => router.push({ pathname: '/gudang', params: { filter: 'low_stock' } })}
                     activeOpacity={0.7}
-                    style={[styles.notifDemo, { backgroundColor: colors.primary + '03', borderColor: colors.primary + '10' }]}
+                    style={[
+                        styles.notifDemo, 
+                        { 
+                            backgroundColor: lowStockCount > 0 ? colors.danger + '10' : colors.success + '10', 
+                            borderColor: lowStockCount > 0 ? colors.danger + '30' : colors.success + '30',
+                            marginBottom: 20
+                        }
+                    ]}
                 >
-                    <View style={[styles.notifIcon, { backgroundColor: colors.primary }]}>
-                        <Ionicons name="notifications" size={16} color="#FFF" />
+                    <View style={[styles.notifIcon, { backgroundColor: lowStockCount > 0 ? colors.danger : colors.success }]}>
+                        <Ionicons name={lowStockCount > 0 ? "warning" : "checkmark-circle"} size={16} color="#FFF" />
                     </View>
                     <View style={{ flex: 1, marginLeft: 12 }}>
-                        <Text style={[styles.notifTitle, { color: colors.text }]}>Coba Push Notifikasi (Internet)</Text>
-                        <Text style={{ fontSize: 10, color: colors.textSecondary }}>Klik untuk mengetes fitur Firebase mOTO!</Text>
+                        <Text style={[styles.notifTitle, { color: lowStockCount > 0 ? colors.danger : colors.success }]}>
+                            {lowStockCount > 0 ? 'Peringatan Stok Menipis' : 'Stok Produk Aman'}
+                        </Text>
+                        <Text style={{ fontSize: 10, color: colors.textSecondary }}>
+                            {lowStockCount > 0 
+                                ? `Ada ${lowStockCount} item yang sisa stoknya 5 atau kurang. Segera restock!` 
+                                : 'Semua item di gudang memiliki stok yang cukup untuk dijual.'}
+                        </Text>
                     </View>
-                    <View style={[styles.proBadge, { backgroundColor: colors.success }]}>
-                        <Text style={{ color: '#FFF', fontSize: 7, fontWeight: '900' }}>ONLINE</Text>
-                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={lowStockCount > 0 ? colors.danger : colors.success} />
                 </TouchableOpacity>
-
-                {lowStockCount > 0 && (
-                    <TouchableOpacity 
-                        style={[styles.alertBanner, { backgroundColor: colors.danger + '10', borderColor: colors.danger + '30' }]} 
-                        onPress={() => router.push({ pathname: '/gudang', params: { filter: 'low_stock' } })}
-                    >
-                        <Ionicons name="warning" size={18} color={colors.danger} />
-                        <Text style={[styles.alertTitle, { color: colors.danger, flex: 1, marginLeft: 10 }]}>{lowStockCount} Item Stok Menipis</Text>
-                        <Ionicons name="chevron-forward" size={16} color={colors.danger} />
-                    </TouchableOpacity>
-                )}
 
                 <View style={styles.sectionHeader}><Text style={[styles.sectionTitle, { color: colors.text }]}>Transaksi Terakhir</Text></View>
                 <View style={[styles.listContainer, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
@@ -169,31 +170,31 @@ const styles = StyleSheet.create({
     container: { flex: 1 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 15 },
     menuBtn: { width: 44, height: 44, borderRadius: 14, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-    content: { padding: 20, paddingBottom: 100 },
+    content: { padding: 16, paddingBottom: 100 },
     
-    finGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20 },
-    finCard: { width: (width - 50) / 2, padding: 18, borderRadius: 24, marginBottom: 12 },
-    finValue: { fontSize: 18, fontWeight: '800' },
-    finSub: { fontSize: 10, fontWeight: '700' },
-    finSub2: { fontSize: 10, marginTop: 2, opacity: 0.7 },
+    finGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 16 },
+    finCard: { width: (width - 44) / 2, padding: 14, borderRadius: 16, marginBottom: 12 },
+    finValue: { fontSize: 16, fontWeight: '800' },
+    finSub: { fontSize: 9, fontWeight: '700' },
+    finSub2: { fontSize: 9, marginTop: 2, opacity: 0.7 },
     
-    actionsRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 16, borderRadius: 20, borderWidth: 1, marginBottom: 15 },
+    actionsRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, borderRadius: 16, borderWidth: 1, marginBottom: 16 },
     actionIconWrapper: { alignItems: 'center', flex: 1 },
-    actionIcon: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
+    actionIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
     actionLabel: { fontSize: 10, fontWeight: '700' },
 
-    notifDemo: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 16, borderWidth: 1, marginBottom: 20 },
-    notifIcon: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-    notifTitle: { fontSize: 13, fontWeight: '700' },
+    notifDemo: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 14, borderWidth: 1, marginBottom: 16 },
+    notifIcon: { width: 30, height: 30, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+    notifTitle: { fontSize: 12, fontWeight: '700' },
     proBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
     
-    alertBanner: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 20 },
-    alertTitle: { fontSize: 13, fontWeight: '700' },
+    alertBanner: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 14, borderWidth: 1, marginBottom: 16 },
+    alertTitle: { fontSize: 12, fontWeight: '700' },
     
-    sectionHeader: { marginBottom: 12 },
-    sectionTitle: { fontSize: 18, fontWeight: '800' },
-    listContainer: { borderRadius: 20, borderWidth: 1, padding: 4 },
-    listItem: { flexDirection: 'row', alignItems: 'center', padding: 14 },
-    listIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-    listTitle: { fontSize: 14, fontWeight: '700' }
+    sectionHeader: { marginBottom: 10 },
+    sectionTitle: { fontSize: 16, fontWeight: '800' },
+    listContainer: { borderRadius: 16, borderWidth: 1, padding: 0, overflow: 'hidden' },
+    listItem: { flexDirection: 'row', alignItems: 'center', padding: 12 },
+    listIcon: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+    listTitle: { fontSize: 13, fontWeight: '700' }
 });

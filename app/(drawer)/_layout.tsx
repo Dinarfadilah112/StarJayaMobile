@@ -12,10 +12,8 @@ export default function MainLayout() {
                 contentStyle: { backgroundColor: colors.background }
             }}
         >
-            {/* Tabs is the main screen */}
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             
-            {/* These are now simple stack screens instead of drawer screens */}
             <Stack.Screen 
                 name="mechanics" 
                 options={{ 
@@ -25,6 +23,7 @@ export default function MainLayout() {
                     headerTintColor: colors.text 
                 }} 
             />
+            
             <Stack.Screen 
                 name="qr-scanner" 
                 options={{ 
@@ -34,6 +33,7 @@ export default function MainLayout() {
                     headerTintColor: colors.text 
                 }} 
             />
+            
             <Stack.Screen 
                 name="notifications" 
                 options={{ 
