@@ -93,21 +93,24 @@ export default function DashboardScreen() {
                 </View>
 
                 {/* Quick Actions row */}
+                <View style={[styles.sectionHeader, { marginTop: 10 }]}>
+                    <Text style={[styles.sectionTitle, { color: colors.text, textTransform: 'uppercase', letterSpacing: 1, fontSize: 13 }]}>FITUR CEPAT</Text>
+                </View>
                 <View style={[styles.actionsRow, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
                     <TouchableOpacity onPress={() => navigation.navigate('kasir' as never)} style={styles.actionIconWrapper}>
                         <View style={[styles.actionIcon, { backgroundColor: colors.primary + '15' }]}><Ionicons name="cart-outline" size={18} color={colors.primary} /></View>
-                        <Text style={styles.actionLabel}>Kasir</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setIsScannerVisible(true)} style={styles.actionIconWrapper}>
-                        <View style={[styles.actionIcon, { backgroundColor: colors.info + '15' }]}><Ionicons name="scan-outline" size={18} color={colors.info} /></View>
-                        <Text style={styles.actionLabel}>Scan</Text>
+                        <Text style={styles.actionLabel}>Kasir Cepat</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => setIsCalcVisible(true)} style={styles.actionIconWrapper}>
-                        <View style={[styles.actionIcon, { backgroundColor: colors.warning + '15' }]}><Ionicons name="calculator-outline" size={18} color={colors.warning} /></View>
-                        <Text style={styles.actionLabel}>Hitung</Text>
+                        <View style={[styles.actionIcon, { backgroundColor: colors.primary + '15' }]}><Ionicons name="calculator-outline" size={18} color={colors.primary} /></View>
+                        <Text style={styles.actionLabel}>Hitung Cepat</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setIsScannerVisible(true)} style={styles.actionIconWrapper}>
+                        <View style={[styles.actionIcon, { backgroundColor: colors.primary + '15' }]}><Ionicons name="scan-outline" size={18} color={colors.primary} /></View>
+                        <Text style={styles.actionLabel}>Scan</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => navigation.navigate('gudang' as never)} style={styles.actionIconWrapper}>
-                        <View style={[styles.actionIcon, { backgroundColor: '#8B5CF615' }]}><Ionicons name="cube-outline" size={18} color="#8B5CF6" /></View>
+                        <View style={[styles.actionIcon, { backgroundColor: colors.primary + '15' }]}><Ionicons name="cube-outline" size={18} color={colors.primary} /></View>
                         <Text style={styles.actionLabel}>Stok</Text>
                     </TouchableOpacity>
                 </View>

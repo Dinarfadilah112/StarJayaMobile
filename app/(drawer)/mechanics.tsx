@@ -1,6 +1,5 @@
 import { useTheme } from '@/context/ThemeContext';
-import { getMechanics, MechanicDB } from '@/database/db';
-import { addMechanicSupa, deleteMechanicSupa, getMechanicsSupa, updateMechanicSupa } from '@/services/supabaseService';
+import { getMechanics, MechanicDB, addMechanic, deleteMechanic, updateMechanic } from '@/database/db';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
@@ -38,20 +37,11 @@ export default function MechanicsScreen() {
     const fetchMechanics = async () => {
         try {
             setIsLoading(true);
-            const data = await getMechanicsSupa();
+            const data = await getMechanics();
             setMechanicsList(data);
         } catch (e: any) {
             console.error("Fetch mechanics error:", e);
-
-            // Check for missing table error (PGRST205) or any other network error
-            if (e.code === 'PGRST205' || e.message?.includes('mechanics')) {
-                // Fallback to local DB silently or with log
-                console.log("Falling back to local mechanics DB");
-                const localData = await getMechanics();
-                setMechanicsList(localData);
-            } else {
-                Alert.alert("Error", "Gagal memuat data mekanik");
-            }
+            Alert.alert("Error", "Gagal memuat data mekanik");
         } finally {
             setIsLoading(false);
         }
@@ -108,7 +98,7 @@ export default function MechanicsScreen() {
 
         try {
             if (isEditing && targetId) {
-                await updateMechanicSupa(targetId, {
+                await updateMechanic(targetId, {
                     name,
                     avatar: avatar || undefined,
                     email,
@@ -118,7 +108,7 @@ export default function MechanicsScreen() {
                 });
                 Alert.alert("Sukses", isOffline ? "Pembaruan disimpan secara lokal (Offline)." : "Data mekanik berhasil diperbarui.");
             } else {
-                await addMechanicSupa({
+                await addMechanic({
                     name,
                     avatar: avatar || undefined,
                     email,
@@ -150,7 +140,7 @@ export default function MechanicsScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            await deleteMechanicSupa(id);
+                            await deleteMechanic(id);
                             fetchMechanics();
                         } catch (e) {
                             Alert.alert("Gagal", "Gagal menghapus data.");
