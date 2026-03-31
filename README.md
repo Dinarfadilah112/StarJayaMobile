@@ -17,10 +17,21 @@ Membantu digitalisasi ekosistem bengkel di Indonesia dengan menyediakan alat man
 - **Database**: SQLite (Offline First) & Supabase (Cloud Sync)
 - **UI/UX**: Modern Glassmorphism & Royal Blue Aesthetics
 
-## 📦 Instalasi
-1. Clone repository
-2. Jalankan `npm install`
-3. Jalankan `npx expo start`
+## 🤝 Kolaborasi & Kontribusi
+
+Untuk berkolaborasi dengan tim, ikuti alur kerja berikut:
+
+1. **Pull Terbaru**: Selalu jalankan `git pull origin master` sebelum mulai bekerja untuk mengambil update terbaru dari teman.
+2. **Buat Perubahan**: Lakukan koding seperti biasa di komputer lokal.
+3. **Simpan (Commit)**:
+   ```bash
+   git add .
+   git commit -m "penjelasan singkat apa yang diubah"
+   ```
+4. **Kirim (Push)**:
+   ```bash
+   git push origin master
+   ```
 
 ---
 *Built for the next generation of Indonesian workshops.*
