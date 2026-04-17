@@ -23,26 +23,6 @@ export default function MainLayout() {
                     headerTintColor: colors.text 
                 }} 
             />
-            
-            <Stack.Screen 
-                name="qr-scanner" 
-                options={{ 
-                    headerShown: true, 
-                    title: 'Tautkan Perangkat',
-                    headerStyle: { backgroundColor: colors.card },
-                    headerTintColor: colors.text 
-                }} 
-            />
-            
-            <Stack.Screen 
-                name="notifications" 
-                options={{ 
-                    headerShown: true, 
-                    title: 'Notifikasi',
-                    headerStyle: { backgroundColor: colors.card },
-                    headerTintColor: colors.text 
-                }} 
-            />
         </Stack>
     );
 }

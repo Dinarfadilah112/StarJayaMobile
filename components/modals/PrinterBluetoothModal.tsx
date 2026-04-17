@@ -106,7 +106,8 @@ export default function PrinterBluetoothModal({ visible, onClose }: Props) {
             // Because the print gets triggered directly or from the history list, we must query items if empty
             let itemsToPrint = receiptItems;
             if (itemsToPrint.length === 0 || selectedTrx?.id !== trx.id) {
-                itemsToPrint = getTransactionDetails(trx.id);
+                const details = await getTransactionDetails(trx.id) as any;
+                itemsToPrint = details;
             }
             const htmlString = generateReceiptHtml(trx, itemsToPrint);
             
@@ -122,8 +123,8 @@ export default function PrinterBluetoothModal({ visible, onClose }: Props) {
         }
     };
 
-    const handlePreviewReceipt = (trx: Transaction) => {
-        const details = getTransactionDetails(trx.id);
+    const handlePreviewReceipt = async (trx: Transaction) => {
+        const details = await getTransactionDetails(trx.id) as any;
         setReceiptItems(details);
         setSelectedTrx(trx);
     };
@@ -243,7 +244,7 @@ export default function PrinterBluetoothModal({ visible, onClose }: Props) {
                 <View style={styles.modalContent}>
                     {/* Header */}
                     <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>Printer Bluetooth</Text>
+                        <Text style={styles.modalTitle}>Pengaturan Printer</Text>
                         <TouchableOpacity onPress={onClose}>
                             <Ionicons name="close-circle" size={28} color="#94A3B8" />
                         </TouchableOpacity>

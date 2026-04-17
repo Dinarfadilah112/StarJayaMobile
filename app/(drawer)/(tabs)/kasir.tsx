@@ -1,7 +1,6 @@
 import { useTheme } from '@/context/ThemeContext';
 import { Product, useShop } from '@/context/ShopContext';
-import { MechanicDB, getMechanics } from '@/database/db';
-import { getMechanicsSupa, getStoreSettingsSupa } from '@/services/supabaseService';
+import { MechanicDB, getMechanics, getShopSettings } from '@/database/db';
 import { generateReceiptHtml } from '@/utils/receiptHtml';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -17,7 +16,7 @@ import CheckoutSuccessModal from '@/components/modals/CheckoutSuccessModal';
 const { width } = Dimensions.get('window');
 
 export default function KasirScreen() {
-    const { products, cart, addToCart, categories, paymentMethod, serviceFee, refreshData } = useShop();
+    const { products, cart, addToCart, categories, paymentMethod, serviceFee, refreshData, shopInfo } = useShop();
     const navigation = useNavigation();
     const { colors } = useTheme();
 
@@ -27,24 +26,13 @@ export default function KasirScreen() {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [lastTransactionId, setLastTransactionId] = useState<string>('');
     const [isScannerVisible, setIsScannerVisible] = useState(false);
-
     useEffect(() => {
         const loadMechanics = async () => {
             try {
-                const remote = await getMechanicsSupa();
-                if (remote && remote.length > 0) {
-                    setMechanicsList(remote);
-                    return;
-                }
-            } catch (supaErr) {
-                console.log("Remote mechanics fail, falling back to local:", supaErr);
-            }
-
-            try {
                 const local = await getMechanics();
-                setMechanicsList(local || []);
+                setMechanicsList((local || []) as MechanicDB[]);
             } catch (err) {
-                console.error("Local mechanics load error:", err);
+                console.error("Mechanics load error:", err);
                 setMechanicsList([]);
             }
         };
@@ -100,13 +88,24 @@ export default function KasirScreen() {
 
         let settings = null;
         try {
-            settings = await getStoreSettingsSupa();
+            settings = await getShopSettings();
         } catch (e) {
             console.warn("Failed to fetch store settings for receipt, using defaults");
         }
 
         const now = new Date();
-        const html = generateReceiptHtml(lastTransactionId, now, cart, totalAmount, serviceFee, paymentMethod, settings);
+        const settingsForReceipt = settings ? {
+            store_name: (settings as any).name,
+            store_address: (settings as any).address,
+            store_phone: (settings as any).phone,
+            receipt_footer: (settings as any).footer_note,
+            logo_uri: (settings as any).logo_uri,
+            receipt_font_size: (settings as any).receipt_font_size,
+            receipt_color: (settings as any).receipt_color,
+            paper_size: (settings as any).paper_size
+        } : null;
+
+        const html = generateReceiptHtml(lastTransactionId, now, cart, totalAmount, serviceFee, paymentMethod, settingsForReceipt);
 
         try {
             await Print.printAsync({ html });
@@ -115,13 +114,30 @@ export default function KasirScreen() {
         }
     };
 
+    const getBusinessIconData = () => {
+        const type = shopInfo?.business_type || 'bengkel';
+        switch (type) {
+            case 'bengkel': return { name: 'construct', color: colors.primary };
+            case 'air_galon': return { name: 'water', color: '#3b82f6' };
+            case 'elektronik': return { name: 'tv', color: '#ef4444' };
+            case 'buah_sayur': return { name: 'nutrition', color: '#10b981' };
+            case 'sembako': return { name: 'basket', color: '#f59e0b' };
+            case 'laundry': return { name: 'shirt', color: '#6366f1' };
+            case 'ponsel': return { name: 'phone-portrait', color: '#8b5cf6' };
+            case 'studio': return { name: 'camera', color: '#ec4899' };
+            case 'online': return { name: 'globe', color: '#06b6d4' };
+            case 'katering': return { name: 'restaurant', color: '#f97316' };
+            default: return { name: 'cube', color: colors.primary };
+        }
+    };
+
     const renderCategory = ({ item }: { item: any }) => {
         const isActive = activeCategory === item.name;
-        let iconName: keyof typeof Ionicons.glyphMap = 'pricetag-outline';
-        if (item.name.toLowerCase().includes('service')) iconName = 'construct-outline';
-        else if (item.name.toLowerCase().includes('oli')) iconName = 'water-outline';
-        else if (item.name.toLowerCase().includes('ban')) iconName = 'disc-outline';
-        else if (item.name.toLowerCase().includes('sparepart')) iconName = 'cog-outline';
+        const bizData = getBusinessIconData();
+        let iconName: keyof typeof Ionicons.glyphMap = (bizData.name + '-outline') as any;
+
+        if (item.name === 'Semua') iconName = 'grid-outline';
+        else if (item.name.toLowerCase().includes('service')) iconName = 'build-outline';
 
         return (
             <TouchableOpacity
@@ -137,14 +153,18 @@ export default function KasirScreen() {
 
     const getCategoryIcon = (category: string) => {
         const cat = category.toLowerCase();
-        if (cat.includes('service') || cat.includes('jasa')) return { name: 'construct', color: '#f59e0b' };
-        if (cat.includes('oli') || cat.includes('oil')) return { name: 'water', color: '#10b981' };
-        if (cat.includes('ban') || cat.includes('tire')) return { name: 'disc', color: '#6366f1' };
-        if (cat.includes('sparepart') || cat.includes('part')) return { name: 'cog', color: '#8b5cf6' };
-        if (cat.includes('aki') || cat.includes('battery')) return { name: 'battery-charging', color: '#ef4444' };
-        if (cat.includes('filter')) return { name: 'funnel', color: '#14b8a6' };
-        if (cat.includes('lampu') || cat.includes('light')) return { name: 'bulb', color: '#f59e0b' };
-        return { name: 'cube', color: '#06b6d4' };
+        const bizData = getBusinessIconData();
+
+        if (cat.includes('service') || cat.includes('jasa')) return { name: 'build', color: '#f59e0b' };
+        
+        // Workshop specific defaults (only if business is bengkel or generic)
+        if (shopInfo?.business_type === 'bengkel' || !shopInfo?.business_type) {
+            if (cat.includes('oli') || cat.includes('oil')) return { name: 'water', color: '#10b981' };
+            if (cat.includes('ban') || cat.includes('tire')) return { name: 'disc', color: '#6366f1' };
+            if (cat.includes('sparepart') || cat.includes('part')) return { name: 'cog', color: '#8b5cf6' };
+        }
+
+        return bizData;
     };
 
     const renderProduct = ({ item }: { item: Product }) => {
@@ -247,7 +267,7 @@ export default function KasirScreen() {
                 }
                 ListEmptyComponent={
                     <View style={{ width: '100%', padding: 40, alignItems: 'center' }}>
-                        <Ionicons name="cube-outline" size={80} color={colors.textSecondary} />
+                        <Ionicons name={(getBusinessIconData().name + '-outline') as any} size={80} color={colors.textSecondary + '20'} />
                         <Text style={{ marginTop: 16, color: colors.textSecondary, fontSize: 16 }}>Tidak ada produk</Text>
                     </View>
                 }

@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, TextInput,
 import { Ionicons } from '@expo/vector-icons';
 import { useShop } from '@/context/ShopContext';
 import { useTheme } from '@/context/ThemeContext';
-import { useNotifications } from '@/context/NotificationContext';
 import { MechanicDB } from '@/database/db';
 import { Image } from 'expo-image';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
@@ -33,7 +32,6 @@ export default function CartModal({ visible, onClose, mechanicsList, onCheckoutS
     } = useShop();
     
     const { colors } = useTheme();
-    const { notifyTransaction } = useNotifications();
 
     const [serviceFeeInput, setServiceFeeInput] = useState<string>('0');
     
@@ -69,7 +67,6 @@ export default function CartModal({ visible, onClose, mechanicsList, onCheckoutS
         try {
             const transactionId = 'TRX-' + Date.now();
             await checkout();
-            notifyTransaction(grandTotal, cart.reduce((s, i) => s + i.quantity, 0));
             onCheckoutSuccess(transactionId);
         } catch (error) {
             Alert.alert('Error', 'Gagal melakukan checkout');
@@ -198,7 +195,7 @@ export default function CartModal({ visible, onClose, mechanicsList, onCheckoutS
                                             activeOpacity={0.8}
                                         >
                                             <Ionicons
-                                                name={method.icon as keyof typeof Ionicons.glyphMap}
+                                                name={method.icon as any}
                                                 size={20}
                                                 color={paymentMethod === method.id ? '#FFF' : colors.text}
                                             />
@@ -234,17 +231,14 @@ export default function CartModal({ visible, onClose, mechanicsList, onCheckoutS
                                     </TouchableOpacity>
 
                                     {mechanicsList && Array.isArray(mechanicsList) && mechanicsList.map((m) => {
-                                        const isInactive = m.status !== 'Aktif';
                                         return (
                                             <TouchableOpacity
                                                 key={m.id}
-                                                disabled={isInactive}
                                                 style={[
                                                     styles.mechanicChip,
                                                     {
                                                         backgroundColor: mechanicId === m.id ? colors.primary : colors.pill,
-                                                        borderColor: colors.cardBorder,
-                                                        opacity: isInactive ? 0.5 : 1,
+                                                        borderColor: colors.cardBorder
                                                     }
                                                 ]}
                                                 onPress={() => {
@@ -254,21 +248,17 @@ export default function CartModal({ visible, onClose, mechanicsList, onCheckoutS
                                                 activeOpacity={0.8}
                                             >
                                                 <Image
-                                                    source={{ uri: m.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name)}` }}
+                                                    source={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name)}` }}
                                                     style={{ width: 24, height: 24, borderRadius: 12, marginRight: 8, backgroundColor: '#E2E8F0' }}
                                                 />
                                                 <View>
                                                     <Text style={{
                                                         color: mechanicId === m.id ? '#FFF' : colors.text,
                                                         fontWeight: '600',
-                                                        fontSize: 13,
-                                                        textDecorationLine: isInactive ? 'line-through' : 'none'
+                                                        fontSize: 13
                                                     }}>
                                                         {m.name}
                                                     </Text>
-                                                    {isInactive && (
-                                                        <Text style={{ fontSize: 10, color: colors.danger }}>{m.status}</Text>
-                                                    )}
                                                 </View>
                                             </TouchableOpacity>
                                         );

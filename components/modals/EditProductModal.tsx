@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useShop, Product } from '@/context/ShopContext';
+import { updateProductSupa } from '@/services/supabaseService';
+import { BarangDB } from '@/database/db';
 import { useTheme } from '@/context/ThemeContext';
-import { useNotifications } from '@/context/NotificationContext';
 import BarcodeScannerModal from '@/components/BarcodeScannerModal';
 
 interface Props {
@@ -15,8 +16,7 @@ interface Props {
 
 export default function EditProductModal({ visible, onClose, editingProduct, onOpenCategoryManager }: Props) {
     const { colors } = useTheme();
-    const { categories, updateProductData } = useShop();
-    const { notifyProductUpdate } = useNotifications();
+    const { categories, refreshData } = useShop();
 
     const [scannerVisible, setScannerVisible] = useState(false);
 
@@ -55,25 +55,24 @@ export default function EditProductModal({ visible, onClose, editingProduct, onO
 
         const cat = categories.find(c => c.id === form.categoryId);
 
-        const updatedProduct: Product = {
-            ...editingProduct,
-            id: editingProduct.id, 
+        const updatedProduct: BarangDB = {
+            kode_barang: editingProduct.id, 
             barcode: form.barcode,
-            name: form.name,
-            stock: parseInt(form.stock) || 0,
-            price: parseInt(form.price) || 0,
-            buyPrice: parseInt(form.buyPrice) || 0,
-            categoryId: form.categoryId,
-            category: cat ? cat.name : 'Unknown',
-            rack: form.rack,
-            brand: form.brand,
-            unit: form.unit,
+            nama_barang: form.name,
+            stok: parseInt(form.stock) || 0,
+            harga_jual: parseInt(form.price) || 0,
+            harga_beli: parseInt(form.buyPrice) || 0,
+            id_kategori: form.categoryId,
+            lokasi_rak: form.rack,
+            merek: form.brand,
+            satuan: form.unit,
         };
 
-        updateProductData(updatedProduct);
-        notifyProductUpdate(updatedProduct);
-        onClose();
-        Alert.alert("Sukses", "Produk berhasil diperbarui!");
+        updateProductSupa(updatedProduct).then(() => {
+            refreshData();
+            onClose();
+            Alert.alert("Sukses", "Produk berhasil diperbarui!");
+        });
     };
 
     const handleBarcodeScanned = (data: string) => {

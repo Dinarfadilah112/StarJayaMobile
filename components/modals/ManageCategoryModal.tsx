@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useShop } from '@/context/ShopContext';
+import { deleteCategory } from '@/database/db';
+import { addCategorySupa } from '@/services/supabaseService';
 import { useTheme } from '@/context/ThemeContext';
 
 interface Props {
@@ -11,12 +13,12 @@ interface Props {
 
 export default function ManageCategoryModal({ visible, onClose }: Props) {
     const { colors } = useTheme();
-    const { categories, addNewCategory, removeCategory } = useShop();
+    const { categories, refreshData } = useShop();
     const [newCatName, setNewCatName] = useState('');
 
     const handleAdd = () => {
         if (newCatName) {
-            addNewCategory(newCatName);
+            addCategorySupa(newCatName).then(() => refreshData());
             setNewCatName('');
         }
     };
@@ -55,7 +57,7 @@ export default function ManageCategoryModal({ visible, onClose }: Props) {
                         renderItem={({ item }) => (
                             <View style={[styles.catRowItem, { borderBottomColor: colors.cardBorder }]}>
                                 <Text style={{ color: colors.text }}>{item.name}</Text>
-                                <TouchableOpacity onPress={() => removeCategory(item.id)} activeOpacity={0.8}>
+                                <TouchableOpacity onPress={() => { deleteCategory(item.id); refreshData(); }} activeOpacity={0.8}>
                                     <Ionicons name="trash-outline" size={20} color={colors.danger} />
                                 </TouchableOpacity>
                             </View>

@@ -1,28 +1,27 @@
-import NotificationBell from '@/components/NotificationBell';
 import { useShop } from '@/context/ShopContext';
 import { useTheme } from '@/context/ThemeContext';
-import { useUser } from '@/context/UserContext';
-import { useNotifications } from '@/context/NotificationContext';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { getMonthName } from '@/utils/dateUtils';
 import { useNavigation } from '@react-navigation/native';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BarcodeScannerModal from '@/components/BarcodeScannerModal';
-import CalculatorModal from '@/components/CalculatorModal';
 
 const { width } = Dimensions.get('window');
 
 export default function DashboardScreen() {
     const navigation = useNavigation();
-    const { transactions = [], products = [], stats = { totalRevenue: 0, totalExpenses: 0, monthlyRevenue: 0, monthlyPurchases: 0, monthlyExpenses: 0 }, isSyncing = false } = useShop();
+    const { 
+        transactions = [], 
+        products = [], 
+        stats, 
+        isSyncing = false,
+        shopInfo
+    } = useShop();
     const { colors } = useTheme();
-    const { user } = useUser();
 
-    const isOwner = user?.role === 'Owner';
-    const [isCalcVisible, setIsCalcVisible] = useState(false);
     const [isScannerVisible, setIsScannerVisible] = useState(false);
 
     const currentMonth = getMonthName();
@@ -34,37 +33,28 @@ export default function DashboardScreen() {
         setIsScannerVisible(false);
         const product = products.find(p => p.barcode === data || p.id === data);
         if (product) {
-            Alert.alert("Produk Ditemukan", `${product.name}\n\nStok: ${product.stock}\nHarga: ${formatRupiah(product.price)}`);
+            Alert.alert("📦 Produk Ditemukan", `${product.name}\n\nStok: ${product.stock}\nHarga: ${formatRupiah(product.price)}`);
         } else {
-            Alert.alert("Tidak Ditemukan", "Produk tidak terdaftar.");
+            Alert.alert("❌ Tidak Ditemukan", "Produk tidak terdaftar di sistem.");
         }
     };
 
-    const FinancialCard = ({ value, sub, color, bgColor, arrow, sub2, onPress }: any) => (
+    const FinancialCard = ({ value, sub, color, bgColor, icon, onPress }: any) => (
         <TouchableOpacity 
             onPress={onPress}
             activeOpacity={0.8}
             style={[styles.finCard, { backgroundColor: bgColor || colors.card }]}
         >
-            <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <Text style={[styles.finSub, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, fontSize: 10 }]}>{sub}</Text>
-                    <Ionicons name="chevron-forward" size={12} color={colors.textSecondary + '30'} />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                <View style={[styles.miniIcon, { backgroundColor: color + '20' }]}>
+                    <Ionicons name={icon} size={14} color={color} />
                 </View>
-                
-                <View style={{ backgroundColor: 'transparent' }}>
-                    <Text style={[styles.finValue, { color: color || colors.text }]} numberOfLines={1}>
-                        {isOwner ? value : 'Rp ***'}
-                    </Text>
-                    
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                        {arrow && <Ionicons name={arrow} size={11} color={color} style={{ marginRight: 3 }} />}
-                        <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: '600' }}>
-                            {sub2 || (arrow === 'arrow-down' ? 'Pemasukan' : arrow === 'arrow-up' ? 'Pengeluaran' : 'Total')}
-                        </Text>
-                    </View>
-                </View>
+                <Ionicons name="chevron-forward" size={12} color={colors.textSecondary + '30'} />
             </View>
+            <Text style={[styles.finSub, { color: colors.textSecondary }]}>{sub}</Text>
+            <Text style={[styles.finValue, { color: color || colors.text }]} numberOfLines={1}>
+                {formatRupiah(value)}
+            </Text>
         </TouchableOpacity>
     );
 
@@ -72,98 +62,101 @@ export default function DashboardScreen() {
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '600' }}>Halo,</Text>
-                    <Text style={{ fontSize: 20, fontWeight: '800', color: colors.text }}>{user?.name || 'User'}</Text>
+                    <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>Workshop Engine</Text>
+                    <Text style={{ fontSize: 22, fontWeight: '900', color: colors.text }}>{shopInfo?.name || 'Star Jaya Mobile'}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     {isSyncing && <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 12 }} />}
-                    <NotificationBell />
+                    <TouchableOpacity onPress={() => navigation.navigate('options' as never)} style={styles.settingsBtn}>
+                        <Ionicons name="settings-sharp" size={22} color={colors.text} />
+                    </TouchableOpacity>
                 </View>
             </View>
 
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-                {/* Financial Grid 2x3 */}
+                {/* 🚀 Main Executive Stats (Pre-aggregated) */}
+                <View style={[styles.mainStats, { backgroundColor: colors.primary, shadowColor: colors.primary }]}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '700' }}>LABA BERSIH ESTIMASI ({currentMonth})</Text>
+                        <MaterialCommunityIcons name="finance" size={20} color="white" />
+                    </View>
+                    <Text style={styles.mainProfitValue}>{formatRupiah(stats?.profit || 0)}</Text>
+                    <View style={styles.profitDivider} />
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <View>
+                            <Text style={styles.profitSubLabel}>OMZET</Text>
+                            <Text style={styles.profitSubValue}>{formatRupiah(stats?.revenue || 0)}</Text>
+                        </View>
+                        <View style={{ alignItems: 'flex-end' }}>
+                            <Text style={styles.profitSubLabel}>MODAL TERJUAL</Text>
+                            <Text style={styles.profitSubValue}>{formatRupiah(stats?.capital || 0)}</Text>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Grid Stats */}
                 <View style={styles.finGrid}>
-                    <FinancialCard value={formatRupiah(stats.totalRevenue)} sub="Terima" color={colors.success} bgColor={colors.success + '10'} arrow="arrow-down" />
-                    <FinancialCard value={formatRupiah(stats.totalExpenses)} sub="Bayar" color={colors.danger} bgColor={colors.danger + '10'} arrow="arrow-up" />
-                    <FinancialCard value={formatRupiah(stats.monthlyRevenue)} sub={`Penjualan (${currentMonth})`} />
-                    <FinancialCard value={formatRupiah(stats.monthlyPurchases)} sub={`Pembelian (${currentMonth})`} />
-                    <FinancialCard value={formatRupiah(stats.monthlyExpenses)} sub={`Pengeluaran (${currentMonth})`} />
-                    <FinancialCard value={formatRupiah(stats.totalRevenue - stats.totalExpenses)} sub="Total Saldo" sub2="Tunai & Bank" />
+                    <FinancialCard value={stats?.expense || 0} sub="Pengeluaran" color={colors.danger} icon="arrow-up-circle-outline" />
+                    <FinancialCard value={stats?.purchase || 0} sub="Belanja Stok" color={colors.primary} icon="cart-outline" />
                 </View>
 
                 {/* Quick Actions row */}
-                <View style={[styles.sectionHeader, { marginTop: 10 }]}>
-                    <Text style={[styles.sectionTitle, { color: colors.text, textTransform: 'uppercase', letterSpacing: 1, fontSize: 13 }]}>FITUR CEPAT</Text>
+                <View style={styles.sectionHeader}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>KENDALI BENGKEL</Text>
                 </View>
                 <View style={[styles.actionsRow, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
                     <TouchableOpacity onPress={() => navigation.navigate('kasir' as never)} style={styles.actionIconWrapper}>
-                        <View style={[styles.actionIcon, { backgroundColor: colors.primary + '15' }]}><Ionicons name="cart-outline" size={18} color={colors.primary} /></View>
-                        <Text style={styles.actionLabel}>Kasir Cepat</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setIsCalcVisible(true)} style={styles.actionIconWrapper}>
-                        <View style={[styles.actionIcon, { backgroundColor: colors.primary + '15' }]}><Ionicons name="calculator-outline" size={18} color={colors.primary} /></View>
-                        <Text style={styles.actionLabel}>Hitung Cepat</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setIsScannerVisible(true)} style={styles.actionIconWrapper}>
-                        <View style={[styles.actionIcon, { backgroundColor: colors.primary + '15' }]}><Ionicons name="scan-outline" size={18} color={colors.primary} /></View>
-                        <Text style={styles.actionLabel}>Scan</Text>
+                        <View style={[styles.actionIcon, { backgroundColor: colors.primary + '15' }]}><Ionicons name="cash-outline" size={20} color={colors.primary} /></View>
+                        <Text style={styles.actionLabel}>Kasir</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => navigation.navigate('gudang' as never)} style={styles.actionIconWrapper}>
-                        <View style={[styles.actionIcon, { backgroundColor: colors.primary + '15' }]}><Ionicons name="cube-outline" size={18} color={colors.primary} /></View>
-                        <Text style={styles.actionLabel}>Stok</Text>
+                        <View style={[styles.actionIcon, { backgroundColor: colors.primary + '15' }]}><Ionicons name="cube-outline" size={20} color={colors.primary} /></View>
+                        <Text style={styles.actionLabel}>Gudang</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => navigation.navigate('penjualan' as never)} style={styles.actionIconWrapper}>
+                        <View style={[styles.actionIcon, { backgroundColor: colors.primary + '15' }]}><Ionicons name="bar-chart-outline" size={20} color={colors.primary} /></View>
+                        <Text style={styles.actionLabel}>Laporan</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setIsScannerVisible(true)} style={styles.actionIconWrapper}>
+                        <View style={[styles.actionIcon, { backgroundColor: colors.primary + '15' }]}><Ionicons name="scan-outline" size={20} color={colors.primary} /></View>
+                        <Text style={styles.actionLabel}>Cek Harga</Text>
                     </TouchableOpacity>
                 </View>
 
-                {/* Low Stock Alert */}
-                <TouchableOpacity 
-                    onPress={() => router.push({ pathname: '/gudang', params: { filter: 'low_stock' } })}
-                    activeOpacity={0.7}
-                    style={[
-                        styles.notifDemo, 
-                        { 
-                            backgroundColor: lowStockCount > 0 ? colors.danger + '10' : colors.success + '10', 
-                            borderColor: lowStockCount > 0 ? colors.danger + '30' : colors.success + '30',
-                            marginBottom: 20
-                        }
-                    ]}
-                >
-                    <View style={[styles.notifIcon, { backgroundColor: lowStockCount > 0 ? colors.danger : colors.success }]}>
-                        <Ionicons name={lowStockCount > 0 ? "warning" : "checkmark-circle"} size={16} color="#FFF" />
-                    </View>
-                    <View style={{ flex: 1, marginLeft: 12 }}>
-                        <Text style={[styles.notifTitle, { color: lowStockCount > 0 ? colors.danger : colors.success }]}>
-                            {lowStockCount > 0 ? 'Peringatan Stok Menipis' : 'Stok Produk Aman'}
+                {/* Alerts */}
+                {lowStockCount > 0 && (
+                    <TouchableOpacity 
+                        onPress={() => router.push({ pathname: '/gudang', params: { filter: 'low_stock' } })}
+                        activeOpacity={0.7}
+                        style={[styles.alertCard, { backgroundColor: colors.danger + '10', borderColor: colors.danger + '30' }]}
+                    >
+                        <Ionicons name="warning" size={20} color={colors.danger} />
+                        <Text style={[styles.alertText, { color: colors.danger }]}>
+                            Ada {lowStockCount} barang hampir habis! Segera belanja stok.
                         </Text>
-                        <Text style={{ fontSize: 10, color: colors.textSecondary }}>
-                            {lowStockCount > 0 
-                                ? `Ada ${lowStockCount} item yang sisa stoknya 5 atau kurang. Segera restock!` 
-                                : 'Semua item di gudang memiliki stok yang cukup untuk dijual.'}
-                        </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={16} color={lowStockCount > 0 ? colors.danger : colors.success} />
-                </TouchableOpacity>
+                        <Ionicons name="chevron-forward" size={16} color={colors.danger} />
+                    </TouchableOpacity>
+                )}
 
-                <View style={styles.sectionHeader}><Text style={[styles.sectionTitle, { color: colors.text }]}>Transaksi Terakhir</Text></View>
+                <View style={styles.sectionHeader}><Text style={[styles.sectionTitle, { color: colors.text }]}>AKTIVITAS TERAKHIR</Text></View>
                 <View style={[styles.listContainer, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
                     {transactions.length === 0 ? (
-                        <View style={{ padding: 40, alignItems: 'center' }}><Text style={{ color: colors.textSecondary }}>Belum ada transaksi.</Text></View>
+                        <View style={{ padding: 40, alignItems: 'center' }}><Text style={{ color: colors.textSecondary, fontSize: 12 }}>Data transaksi kosong.</Text></View>
                     ) : (
                         transactions.slice(0, 5).map((trx, index) => (
                             <View key={trx.id} style={[styles.listItem, { borderBottomColor: colors.cardBorder, borderBottomWidth: index === 4 || index === transactions.length - 1 ? 0 : 1 }]}>
-                                <View style={[styles.listIcon, { backgroundColor: colors.success + '15' }]}><Ionicons name="arrow-down" size={16} color={colors.success} /></View>
+                                <View style={[styles.listIcon, { backgroundColor: colors.success + '15' }]}><Ionicons name="receipt-outline" size={18} color={colors.success} /></View>
                                 <View style={{ flex: 1, marginLeft: 12 }}>
-                                    <Text style={[styles.listTitle, { color: colors.text }]}>Penjualan #{trx.id.slice(-4)}</Text>
-                                    <Text style={{ fontSize: 11, color: colors.textSecondary }}>{new Date(trx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                                    <Text style={[styles.listTitle, { color: colors.text }]}>Penjualan #{trx.id.slice(-6)}</Text>
+                                    <Text style={{ fontSize: 11, color: colors.textSecondary }}>{new Date(trx.date).toLocaleDateString()} • {new Date(trx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                                 </View>
-                                <Text style={{ fontWeight: '800', color: colors.success }}>{formatRupiah(trx.total)}</Text>
+                                <Text style={{ fontWeight: '900', color: colors.text, fontSize: 15 }}>{formatRupiah(trx.total)}</Text>
                             </View>
                         ))
                     )}
                 </View>
             </ScrollView>
 
-            <CalculatorModal isVisible={isCalcVisible} onClose={() => setIsCalcVisible(false)} />
             <BarcodeScannerModal isVisible={isScannerVisible} onClose={() => setIsScannerVisible(false)} onScanned={handleBarcodeScanned} />
         </SafeAreaView>
     );
@@ -171,33 +164,35 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 15 },
-    menuBtn: { width: 44, height: 44, borderRadius: 14, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-    content: { padding: 16, paddingBottom: 100 },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 20 },
+    settingsBtn: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+    content: { padding: 18, paddingBottom: 100 },
     
-    finGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 16 },
-    finCard: { width: (width - 44) / 2, padding: 14, borderRadius: 16, marginBottom: 12 },
-    finValue: { fontSize: 16, fontWeight: '800' },
-    finSub: { fontSize: 9, fontWeight: '700' },
-    finSub2: { fontSize: 9, marginTop: 2, opacity: 0.7 },
-    
-    actionsRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, borderRadius: 16, borderWidth: 1, marginBottom: 16 },
-    actionIconWrapper: { alignItems: 'center', flex: 1 },
-    actionIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
-    actionLabel: { fontSize: 10, fontWeight: '700' },
+    // Pro Executive Stats
+    mainStats: { padding: 22, borderRadius: 28, marginBottom: 20, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 12 },
+    mainProfitValue: { fontSize: 32, fontWeight: '900', color: 'white', marginTop: 12 },
+    profitDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.2)', marginVertical: 18 },
+    profitSubLabel: { fontSize: 10, color: 'rgba(255,255,255,0.6)', fontWeight: '700', letterSpacing: 1 },
+    profitSubValue: { fontSize: 15, color: 'white', fontWeight: '800', marginTop: 2 },
 
-    notifDemo: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 14, borderWidth: 1, marginBottom: 16 },
-    notifIcon: { width: 30, height: 30, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
-    notifTitle: { fontSize: 12, fontWeight: '700' },
-    proBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+    finGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
+    finCard: { width: (width - 56) / 2, padding: 16, borderRadius: 24 },
+    miniIcon: { width: 28, height: 28, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+    finValue: { fontSize: 17, fontWeight: '900', marginTop: 4 },
+    finSub: { fontSize: 11, fontWeight: '700', marginTop: 8 },
     
-    alertBanner: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 14, borderWidth: 1, marginBottom: 16 },
-    alertTitle: { fontSize: 12, fontWeight: '700' },
+    actionsRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 16, borderRadius: 24, borderWidth: 1, marginBottom: 24 },
+    actionIconWrapper: { alignItems: 'center', flex: 1 },
+    actionIcon: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+    actionLabel: { fontSize: 11, fontWeight: '800' },
+
+    alertCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 18, borderWidth: 1, marginBottom: 24, gap: 12 },
+    alertText: { flex: 1, fontSize: 12, fontWeight: '700' },
     
-    sectionHeader: { marginBottom: 10 },
-    sectionTitle: { fontSize: 16, fontWeight: '800' },
-    listContainer: { borderRadius: 16, borderWidth: 1, padding: 0, overflow: 'hidden' },
-    listItem: { flexDirection: 'row', alignItems: 'center', padding: 12 },
-    listIcon: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-    listTitle: { fontSize: 13, fontWeight: '700' }
+    sectionHeader: { marginBottom: 12 },
+    sectionTitle: { fontSize: 12, fontWeight: '900', letterSpacing: 1.5, opacity: 0.6 },
+    listContainer: { borderRadius: 24, borderWidth: 1, padding: 0, overflow: 'hidden' },
+    listItem: { flexDirection: 'row', alignItems: 'center', padding: 16 },
+    listIcon: { width: 38, height: 38, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+    listTitle: { fontSize: 14, fontWeight: '800' }
 });

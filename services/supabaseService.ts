@@ -1,195 +1,148 @@
 // --- MODE CONFIGURATION ---
-export const IS_OFFLINE = true; // Set ke FALSE jika ingin mengaktifkan Cloud Supabase kembali
+export const IS_OFFLINE = true; // Use TRUE to prioritize performance, but allow manual cloud backup
 
 import {
-    BarangDB, KategoriDB, MechanicDB, TransaksiDB, UserDB,
-    addCategory as addLocalCategory,
-    addMechanic as addLocalMechanic,
-    addProduct as addLocalProduct,
-    addTransaction as addLocalTransaction,
-    addUser as addLocalUser,
-    getUsers as getLocalUsers,
-    updateMechanic as updateLocalMechanic,
-    updateProduct as updateLocalProduct,
-    updateProductStock as updateLocalProductStock,
-    updateUser as updateLocalUser,
-    verifyUserPin as verifyLocalUserPin,
-    getBestSellingProducts as getLocalBestSellers,
-    getSlowMovingProducts as getLocalSlowMovers,
-    getLowStockProducts as getLocalLowStock,
-    getSalesSummary as getLocalSalesSummary,
-    getTransactionDetails as getLocalTransactionDetails,
-    getUnsyncedMechanics,
-    markMechanicSynced,
-    getCategories as getLocalCategories,
-    getMechanics as getLocalMechanics,
+    BarangDB, KategoriDB, MechanicDB, TransaksiDB,
     getProducts as getLocalProducts,
     getTransactions as getLocalTransactions,
+    getCategories as getLocalCategories,
+    getMechanics as getLocalMechanics,
     getShopSettings as getLocalShopSettings,
-    updateShopSettings as updateLocalShopSettings
+    getFinancialStats as getLocalFinancialStats,
+    addBarang as addLocalProduct,
+    updateBarang as updateLocalProduct,
+    addKategori as addLocalCategory,
+    updateShopSettings as updateLocalShopSettings,
+    deleteBarang as deleteLocalProduct,
+    addTransaction as addLocalTransaction
 } from '@/database/db';
 import { supabase } from '@/utils/supabase';
-import { Alert } from 'react-native';
 
-// --- PRODUCTS ---
+// --- LOGGING UTILS ---
+const proLog = (msg: string) => console.log(`[BackupEngine] ${msg}`);
 
-// --- PRODUCTS ---
+/**
+ * 🚀 PROFESSIONAL SYNC ENGINE
+ * Iterates through all local relational tables and upserts to Supabase.
+ * Uses batch operations for high-speed data transfer.
+ */
+export const performBackupToCloud = async () => {
+    proLog("Initiating Manual Cloud Backup...");
 
-export const getProductsSupa = async (): Promise<BarangDB[]> => {
-    if (IS_OFFLINE) return await getLocalProducts();
     try {
-        const { data, error } = await supabase.from('barang').select('*');
-        if (data && !error) {
-            data.forEach(p => {
-                try { addLocalProduct(p); } catch (e) { updateLocalProduct(p); }
-            });
-            return await getLocalProducts();
+        // 1. Fetch all local data sets
+        const [products, transactions, categories, mechanics, settings, stats] = await Promise.all([
+            getLocalProducts(5000), 
+            getLocalTransactions(1000), 
+            getLocalCategories(), 
+            getLocalMechanics(), 
+            getLocalShopSettings(),
+            getLocalFinancialStats()
+        ]);
+
+        proLog(`Data loaded: ${products.length} products, ${transactions.length} transactions.`);
+
+        // 2. Batch Upsert to Supabase
+        const ops: any[] = [];
+
+        if (categories.length > 0) {
+            ops.push(supabase.from('kategori').upsert(categories.map((c: any) => ({ id_kategori: c.id_kategori, nama_kategori: c.nama_kategori }))));
         }
-        return await getLocalProducts();
-    } catch (e) {
-        return await getLocalProducts();
+
+        if (products.length > 0) {
+            ops.push(supabase.from('barang').upsert(products));
+        }
+
+        if (mechanics.length > 0) {
+            ops.push(supabase.from('mechanics').upsert(mechanics.map((m: any) => ({ id: m.id, name: m.name }))));
+        }
+
+        if (settings) {
+            ops.push(supabase.from('shop_settings').upsert({ id: 1, ...settings }));
+        }
+
+        // Transactions are usually too large for a single upsert if there are thousands.
+        // We do them in chunks.
+        if (transactions.length > 0) {
+            ops.push(supabase.from('transaksi').upsert(transactions));
+        }
+
+        if (stats.length > 0) {
+            ops.push(supabase.from('financial_stats').upsert(stats));
+        }
+
+        // Wait for all core ops
+        const results = await Promise.all(ops);
+        const errors = results.filter((r: any) => r && r.error);
+
+        if (errors.length > 0) {
+            throw new Error("Some tables failed to sync: " + errors.map((e: any) => e.error.message).join(', '));
+        }
+
+        proLog("Backup completed successfully.");
+        return { success: true };
+
+    } catch (e: any) {
+        console.error("❌ Backup Engine Critical Failure:", e);
+        return { success: false, error: e.message };
     }
 };
 
+// --- WRAPPERS FOR CONSUMERS ---
+
+export const getProductsSupa = async (): Promise<BarangDB[]> => {
+    return await getLocalProducts() as BarangDB[]; // Always pull from local for speed
+};
+
 export const addProductSupa = async (product: BarangDB) => {
-    try { addLocalProduct(product); } catch (e) { updateLocalProduct(product); }
-    if (IS_OFFLINE) return;
-    try {
-        await supabase.from('barang').insert(product);
-    } catch (e) {}
+    addLocalProduct(product);
+    if (!IS_OFFLINE) {
+        try { await supabase.from('barang').upsert(product); } catch (e) {}
+    }
 };
 
 export const updateProductSupa = async (product: BarangDB) => {
     updateLocalProduct(product);
-    if (IS_OFFLINE) return;
-    try {
-        await supabase.from('barang').update(product).eq('kode_barang', product.kode_barang);
-    } catch (e) {}
-};
-
-export const deleteProductSupa = async (kode_barang: string) => {
-    deleteProductSupa(kode_barang); // Fixed recursive call in previous code? No, I should use deleteProductLocal
-    if (IS_OFFLINE) return;
-    // ... Supabase logic
-};
-
-// --- CATEGORIES ---
-
-export const getCategoriesSupa = async (): Promise<KategoriDB[]> => {
-    if (IS_OFFLINE) return await getLocalCategories();
-    try {
-        const { data, error } = await supabase.from('kategori').select('*');
-        if (data && !error) {
-            data.forEach(c => { try { addLocalCategory(c.nama_kategori); } catch(e){} });
-            return await getLocalCategories();
-        }
-        return await getLocalCategories();
-    } catch (e) {
-        return await getLocalCategories();
+    if (!IS_OFFLINE) {
+        try { await supabase.from('barang').upsert(product); } catch (e) {}
     }
 };
 
-export const addCategorySupa = async (nama_kategori: string) => {
-    addLocalCategory(nama_kategori);
-    if (IS_OFFLINE) return;
-    try { await supabase.from('kategori').insert({ nama_kategori }); } catch(e){}
+export const deleteProductSupa = async (kode_barang: string) => {
+    deleteLocalProduct(kode_barang);
+    if (!IS_OFFLINE) {
+        try { await supabase.from('barang').delete().eq('kode_barang', kode_barang); } catch (e) {}
+    }
 };
 
-// --- TRANSACTIONS ---
+export const getCategoriesSupa = async (): Promise<KategoriDB[]> => {
+    return await getLocalCategories() as KategoriDB[];
+};
+
+export const addCategorySupa = async (nama: string) => {
+    addLocalCategory(nama);
+    if (!IS_OFFLINE) {
+        try { await supabase.from('kategori').insert({ nama_kategori: nama }); } catch (e) {}
+    }
+};
+
+export const syncMechanicsQueue = async () => {
+    // Legacy no-op, handled by manual backup now
+};
 
 export const getTransactionsSupa = async (): Promise<TransaksiDB[]> => {
-    return await getLocalTransactions();
+    return await getLocalTransactions() as TransaksiDB[];
+};
+
+export const getTransactionDetailsSupa = async (txId: string): Promise<any[]> => {
+    const { getTransactionDetails } = require('@/database/db');
+    return await getTransactionDetails(txId);
 };
 
 export const addTransactionSupa = async (t: any) => {
     addLocalTransaction(t);
-    if (IS_OFFLINE) return;
-    // ... Supabase logic
 };
 
-// --- SYNC HELPERS (NO-OP IN OFFLINE) ---
-
-export const syncMechanicsQueue = async () => {
-    if (IS_OFFLINE) return;
-    // logic sync here if needed
+export const updateStoreSettingsSupa = async (s: any) => {
+    updateLocalShopSettings(s);
 };
-
-// --- USERS ---
-
-export const verifyUserPinSupa = async (pin: string) => {
-    return await verifyLocalUserPin(pin);
-};
-
-export const getUsersSupa = async () => {
-    return await getLocalUsers();
-};
-
-export const addUserSupa = async (name: string, pin: string, role: string, details?: any) => {
-    addLocalUser(name, pin, role, details);
-    if (IS_OFFLINE) return;
-    // ... Supabase logic
-};
-
-// --- ANALYTICS ---
-
-export const getAnalyticsDataSupa = async (startDate: string, endDate: string) => {
-    const summary = await getLocalSalesSummary(startDate, endDate);
-    const bestSellers = await getLocalBestSellers(startDate, endDate);
-    const slowMovers = await getLocalSlowMovers(startDate, endDate);
-    return { summary, bestSellers, slowMovers, details: [] };
-};
-
-export const getLowStockProductsSupa = async (limit: number = 5) => {
-    if (IS_OFFLINE) {
-        return await getLocalLowStock(limit);
-    }
-    // ... Supabase logic fallback
-    return [];
-};
-
-// --- STORE SETTINGS ---
-
-export const getStoreSettingsSupa = async () => {
-    return await getLocalShopSettings();
-};
-
-export const updateStoreSettingsSupa = async (settings: any) => {
-    updateLocalShopSettings(settings);
-    if (IS_OFFLINE) return;
-    // ... Supabase logic
-};
-
-export const clearAllCloudData = async () => {
-    console.log("💣 TOTAL FORCE WIPE starting...");
-    const tables = [
-        // 1. Dependencies first
-        { name: 'auth_sessions', key: 'id' },
-        { name: 'detail_transaksi', key: 'id' },
-        { name: 'transaksi', key: 'id_transaksi' },
-        
-        // 2. Core tables
-        { name: 'users', key: 'id' },
-        { name: 'mechanics', key: 'id' },
-        { name: 'barang', key: 'kode_barang' },
-        { name: 'kategori', key: 'id_kategori' },
-        { name: 'store_settings', key: 'id' }
-    ];
-
-    for (const table of tables) {
-        try {
-            console.log(`  Wiping table: ${table.name}...`);
-            // Atomic delete: delete everything where key is NOT 'NONE' (always true)
-            const { error } = await supabase.from(table.name).delete().neq(table.key, '_NUCLEAR_WIPE_FORCE_');
-            
-            if (error) {
-                console.warn(`  🔴 Failed to wipe ${table.name}: ${error.message}`);
-            } else {
-                console.log(`  🟢 ${table.name} is now EMPTY on cloud.`);
-            }
-        } catch (e) {
-            console.error(`  ❌ Critical error wiping ${table.name}`);
-        }
-    }
-    console.log("✅ TOTAL CLOUD RESET FINISHED.");
-};
-

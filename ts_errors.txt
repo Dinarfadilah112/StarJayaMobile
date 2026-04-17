@@ -1,0 +1,48 @@
+app/(drawer)/(tabs)/kasir.tsx(4,10): error TS2724: '"@/services/supabaseService"' has no exported member named 'getStoreSettingsSupa'. Did you mean 'updateStoreSettingsSupa'?
+app/(drawer)/(tabs)/kasir.tsx(35,34): error TS2345: Argument of type 'unknown[]' is not assignable to parameter of type 'SetStateAction<MechanicDB[]>'.
+  Type 'unknown[]' is not assignable to type 'MechanicDB[]'.
+    Type 'unknown' is not assignable to type 'MechanicDB'.
+app/(drawer)/(tabs)/options.tsx(42,38): error TS18046: 'm' is of type 'unknown'.
+app/(drawer)/(tabs)/penjualan.tsx(4,10): error TS2305: Module '"@/database/db"' has no exported member 'getKeuanganSummary'.
+app/(drawer)/(tabs)/penjualan.tsx(4,30): error TS2305: Module '"@/database/db"' has no exported member 'getPengeluaran'.
+app/(drawer)/(tabs)/penjualan.tsx(4,46): error TS2305: Module '"@/database/db"' has no exported member 'getPembelian'.
+app/_layout.tsx(12,10): error TS2305: Module '"@/services/supabaseService"' has no exported member 'clearAllCloudData'.
+components/modals/AddProductModal.tsx(16,25): error TS2339: Property 'addProduct' does not exist on type 'ShopContextType'.
+components/modals/CartModal.tsx(251,70): error TS2339: Property 'avatar' does not exist on type 'MechanicDB'.
+components/modals/EditProductModal.tsx(17,25): error TS2339: Property 'updateProductData' does not exist on type 'ShopContextType'.
+components/modals/ManageCategoryModal.tsx(14,25): error TS2339: Property 'addNewCategory' does not exist on type 'ShopContextType'.
+components/modals/ManageCategoryModal.tsx(14,41): error TS2339: Property 'removeCategory' does not exist on type 'ShopContextType'.
+components/modals/PrinterBluetoothModal.tsx(5,10): error TS2724: '"@/database/db"' has no exported member named 'getTransactionDetails'. Did you mean 'getTransactions'?
+components/penjualan/TransactionCard.tsx(5,10): error TS2724: '"@/services/supabaseService"' has no exported member named 'getTransactionDetailsSupa'. Did you mean 'getTransactionsSupa'?
+context/ShopContext.tsx(108,25): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<ShopSettings | null>'.
+context/ShopContext.tsx(109,64): error TS18046: 'c' is of type 'unknown'.
+context/ShopContext.tsx(109,85): error TS18046: 'c' is of type 'unknown'.
+context/ShopContext.tsx(112,61): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'BarangDB'.
+context/ShopContext.tsx(114,21): error TS18046: 't' is of type 'unknown'.
+context/ShopContext.tsx(114,43): error TS18046: 't' is of type 'unknown'.
+context/ShopContext.tsx(114,71): error TS18046: 't' is of type 'unknown'.
+context/ShopContext.tsx(115,43): error TS18046: 't' is of type 'unknown'.
+context/ShopContext.tsx(115,84): error TS18046: 't' is of type 'unknown'.
+context/ShopContext.tsx(116,29): error TS18046: 't' is of type 'unknown'.
+context/ShopContext.tsx(116,58): error TS18046: 't' is of type 'unknown'.
+context/ShopContext.tsx(116,82): error TS18046: 't' is of type 'unknown'.
+context/ShopContext.tsx(118,22): error TS2345: Argument of type '{} | null' is not assignable to parameter of type 'SetStateAction<FinancialStats | null>'.
+  Type '{}' is not assignable to type 'SetStateAction<FinancialStats | null>'.
+services/supabaseService.ts(46,15): error TS7034: Variable 'ops' implicitly has type 'any[]' in some locations where its type cannot be determined.
+services/supabaseService.ts(49,91): error TS18046: 'c' is of type 'unknown'.
+services/supabaseService.ts(49,121): error TS18046: 'c' is of type 'unknown'.
+services/supabaseService.ts(57,82): error TS18046: 'm' is of type 'unknown'.
+services/supabaseService.ts(57,94): error TS18046: 'm' is of type 'unknown'.
+services/supabaseService.ts(75,43): error TS7006: Parameter 'results' implicitly has an 'any' type.
+services/supabaseService.ts(75,43): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: [] | readonly unknown[]): Promise<[] | unknown[]>', gave the following error.
+    Argument of type '(results: any) => any[]' is not assignable to parameter of type '[] | readonly unknown[]'.
+  Overload 2 of 2, '(values: Iterable<unknown>): Promise<unknown[]>', gave the following error.
+    Argument of type '(results: any) => any[]' is not assignable to parameter of type 'Iterable<unknown>'.
+services/supabaseService.ts(75,54): error TS7005: Variable 'ops' implicitly has an 'any[]' type.
+services/supabaseService.ts(94,5): error TS2322: Type 'unknown[]' is not assignable to type 'BarangDB[]'.
+  Type 'unknown' is not assignable to type 'BarangDB'.
+services/supabaseService.ts(119,5): error TS2322: Type 'unknown[]' is not assignable to type 'KategoriDB[]'.
+  Type 'unknown' is not assignable to type 'KategoriDB'.
+services/supabaseService.ts(134,5): error TS2322: Type 'unknown[]' is not assignable to type 'TransaksiDB[]'.
+  Type 'unknown' is not assignable to type 'TransaksiDB'.

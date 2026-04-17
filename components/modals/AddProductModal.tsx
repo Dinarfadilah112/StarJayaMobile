@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView, Alert, Platform } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useShop, Product } from '@/context/ShopContext';
+import { addProductSupa } from '@/services/supabaseService';
+import { BarangDB } from '@/database/db';
 import { useTheme } from '@/context/ThemeContext';
-import { useUser } from '@/context/UserContext';
-import { useNotifications } from '@/context/NotificationContext';
 import BarcodeScannerModal from '@/components/BarcodeScannerModal';
 
 interface Props {
@@ -15,10 +15,8 @@ interface Props {
 
 export default function AddProductModal({ visible, onClose, onOpenCategoryManager }: Props) {
     const { colors } = useTheme();
-    const { categories, addProduct } = useShop();
-    const { user } = useUser();
-    const { notifyNewProduct } = useNotifications();
-    const isOwner = user?.role === 'Owner';
+    const { categories, refreshData } = useShop();
+    const isOwner = true;
 
     const [scannerVisible, setScannerVisible] = useState(false);
 
@@ -50,26 +48,25 @@ export default function AddProductModal({ visible, onClose, onOpenCategoryManage
 
         const cat = categories.find(c => c.id === form.categoryId);
 
-        const newProduct: Product = {
-            id: form.id,
+        const newProduct: BarangDB = {
+            kode_barang: form.id,
             barcode: form.barcode,
-            name: form.name,
-            stock: parseInt(form.stock) || 0,
-            price: parseInt(form.price) || 0,
-            buyPrice: parseInt(form.buyPrice) || 0,
-            categoryId: form.categoryId,
-            category: cat ? cat.name : 'Unknown',
-            rack: form.rack,
-            brand: form.brand,
-            unit: form.unit,
-            image: ''
+            nama_barang: form.name,
+            stok: parseInt(form.stock) || 0,
+            harga_jual: parseInt(form.price) || 0,
+            harga_beli: parseInt(form.buyPrice) || 0,
+            id_kategori: form.categoryId,
+            lokasi_rak: form.rack,
+            merek: form.brand,
+            satuan: form.unit
         };
 
-        addProduct(newProduct);
-        notifyNewProduct(newProduct);
-        onClose();
-        resetForm();
-        Alert.alert("Sukses", "Produk berhasil ditambahkan!");
+        addProductSupa(newProduct).then(() => {
+            refreshData();
+            onClose();
+            resetForm();
+            Alert.alert("Sukses", "Produk berhasil ditambahkan!");
+        });
     };
 
     const handleBarcodeScanned = (data: string) => {

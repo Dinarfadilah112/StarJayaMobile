@@ -79,12 +79,12 @@ export default function OnboardingScreen() {
 
     const skipOnboarding = async () => {
         await AsyncStorage.setItem('onboarded', 'true');
-        router.replace('/(auth)/setup');
+        router.replace('/(drawer)/(tabs)');
     };
 
     const finishOnboarding = async () => {
         await AsyncStorage.setItem('onboarded', 'true');
-        router.replace('/(auth)/setup');
+        router.replace('/(drawer)/(tabs)');
     };
 
     const Footer = () => {

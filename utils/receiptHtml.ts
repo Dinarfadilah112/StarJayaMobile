@@ -17,6 +17,10 @@ export const generateReceiptHtml = (
         store_address?: string;
         store_phone?: string;
         receipt_footer?: string;
+        logo_uri?: string;
+        receipt_font_size?: number;
+        receipt_color?: string;
+        paper_size?: '58mm' | '80mm';
     } | null
 ): string => {
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -26,6 +30,9 @@ export const generateReceiptHtml = (
     const address = settings?.store_address || defaultSettings.address;
     const phone = settings?.store_phone || defaultSettings.phone;
     const footer = settings?.receipt_footer || defaultSettings.footer;
+    const fontSize = settings?.receipt_font_size || 11;
+    const accentColor = settings?.receipt_color || '#000000';
+    const paperWidth = settings?.paper_size === '80mm' ? '440px' : '300px';
 
     return `
         <html>
@@ -36,20 +43,21 @@ export const generateReceiptHtml = (
                     body {
                         font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
                         padding: 10px;
-                        max-width: 300px; /* Standard thermal width */
+                        max-width: ${paperWidth}; /* Adaptive thermal width */
                         margin: 0 auto;
                         background-color: #fff;
-                        color: #000;
+                        color: ${accentColor};
+                        font-size: ${fontSize}px;
                     }
                     .header {
                         text-align: center;
                         margin-bottom: 5px;
                     }
                     .brand-name {
-                        font-size: 22px;
+                        font-size: ${fontSize * 2}px;
                         font-weight: 900;
                         text-transform: uppercase;
-                        border-bottom: 4px solid #000;
+                        border-bottom: 4px solid ${accentColor};
                         display: block;
                         padding-bottom: 2px;
                         margin-bottom: 8px;
@@ -67,7 +75,7 @@ export const generateReceiptHtml = (
                          margin-bottom: 10px;
                     }
                     .divider-dashed {
-                        border-top: 1.5px dotted #000;
+                        border-top: 1.5px dotted ${accentColor};
                         margin: 8px 0;
                     }
                     .divider-dotted {
@@ -128,6 +136,7 @@ export const generateReceiptHtml = (
             </head>
             <body>
                 <div class="header">
+                    ${settings?.logo_uri ? `<img src="${settings.logo_uri}" style="width: 60px; height: 60px; object-fit: contain; margin-bottom: 8px;" />` : ''}
                     <div class="brand-name">${name}</div>
                     <div class="address">${address}</div>
                     <div class="phone">${phone}</div>

@@ -15,30 +15,24 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         // Monitor internet connection
         const unsubscribe = NetInfo.addEventListener(state => {
-            const offline = !state.isConnected || !state.isInternetReachable;
+            const offline = !state.isConnected || (state.isInternetReachable === false);
             setIsOffline(offline);
-            
-            if (!offline) {
-                // Auto sync when back online
-                syncAll();
-            }
         });
-
-        // Periodic sync every 5 minutes
-        const interval = setInterval(() => {
-            syncAll();
-        }, 5 * 60 * 1000);
 
         return () => {
             unsubscribe();
-            clearInterval(interval);
         };
     }, []);
 
     const syncAll = async () => {
-        console.log("Checking for data to sync...");
+        if (isOffline) {
+            console.log("Cannot sync: Currently offline.");
+            return;
+        }
+        console.log("Manual Sync Started...");
         await syncMechanicsQueue();
         // Add other queues here (Products, Transactions, etc.)
+        console.log("Manual Sync Finished.");
     };
 
     return (
